@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
 import { PathResolver } from '../core/path-resolver.js';
+import { Logger } from '../utils/logger.js';
 import type { DockerService, VolumeMapping } from '../types/index.js';
 
 export interface ParsedDockerCompose {
@@ -11,15 +12,18 @@ export interface ParsedDockerCompose {
 
 export class DockerComposeParser {
   private resolver: PathResolver;
+  private logger: Logger;
 
   constructor(resolver: PathResolver) {
     this.resolver = resolver;
+    this.logger = new Logger('[DockerComposeParser] ');
   }
 
   parse(filePath: string): ParsedDockerCompose | null {
     const absolutePath = path.join(this.resolver.getRootDir(), filePath);
 
     if (!fs.existsSync(absolutePath)) {
+      this.logger.warn(`File not found: ${filePath}`);
       return null;
     }
 
@@ -28,12 +32,20 @@ export class DockerComposeParser {
     let config: { services?: Record<string, unknown>; networks?: Record<string, unknown> };
     try {
       config = yaml.load(content) as { services?: Record<string, unknown>; networks?: Record<string, unknown> };
-    } catch {
+    } catch (error) {
+      this.logger.warn(`Failed to parse YAML in ${filePath}: ${error}`);
       return { services: [], networks: [] };
     }
 
-    const services = this.parseServices(config?.services || {});
-    const networks = Object.keys(config?.networks || {});
+    if (!config || typeof config !== 'object') {
+      this.logger.warn(`Invalid config structure in ${filePath}`);
+      return { services: [], networks: [] };
+    }
+
+    const services = this.parseServices(config.services || {});
+    const networks = Object.keys(config.networks || {});
+
+    this.logger.debug(`Parsed ${filePath}: ${services.length} services, ${networks.length} networks`);
 
     return { services, networks };
   }

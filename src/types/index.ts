@@ -37,6 +37,22 @@ export interface DockerConfig {
   services: string[];
   serviceDetails?: DockerService[];
   networks?: string[];
+  dockerfile?: DockerfileInfo;
+}
+
+export interface DockerfileInfo {
+  path: string;
+  baseImage: string | null;
+  exposedPorts: string[];
+  buildArgs: string[];
+  isMultiStage: boolean;
+  stages: DockerfileStage[];
+}
+
+export interface DockerfileStage {
+  from: string;
+  as: string | null;
+  commands: string[];
 }
 
 export interface DependencyGraph {

@@ -1,14 +1,17 @@
 import { PathResolver } from './path-resolver.js';
 import { DockerComposeParser } from '../parsers/docker-compose-parser.js';
+import { DockerfileParser } from '../parsers/dockerfile-parser.js';
 import type { DockerConfig } from '../types/index.js';
 
 export class DockerScanner {
   private resolver: PathResolver;
   private composeParser: DockerComposeParser;
+  private dockerfileParser: DockerfileParser;
 
   constructor(resolver: PathResolver) {
     this.resolver = resolver;
     this.composeParser = new DockerComposeParser(resolver);
+    this.dockerfileParser = new DockerfileParser(resolver);
   }
 
   async scan(): Promise<DockerConfig[]> {
@@ -16,10 +19,14 @@ export class DockerScanner {
 
     const dockerfiles = await this.findDockerfiles();
     for (const file of dockerfiles) {
+      const relativePath = this.resolver.getRelativePath(file);
+      const dockerfileInfo = this.dockerfileParser.parse(relativePath);
+      
       configs.push({
         type: 'dockerfile',
-        path: this.resolver.getRelativePath(file),
+        path: relativePath,
         services: [],
+        dockerfile: dockerfileInfo || undefined,
       });
     }
 

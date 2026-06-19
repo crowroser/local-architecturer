@@ -6,17 +6,25 @@
     "arch-viz": "./dist/cli.js"
   },
   "type": "module",
+  "main": "./dist/cli.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run build:frontend",
+    "build:frontend": "cd frontend && npm run build",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
     "lint": "eslint src/**/*.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
     "commander": "^12.0.0",
+    "cors": "^2.8.5",
     "express": "^4.18.0",
     "fast-glob": "^3.3.0",
     "js-yaml": "^4.1.0",
@@ -40,8 +48,22 @@
     "pnpm",
     "docker",
     "mcp",
-    "cli"
+    "cli",
+    "visualization",
+    "react-flow",
+    "dependency-graph"
   ],
-  "author": "",
-  "license": "MIT"
+  "author": "crowroser",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/crowroser/local-architecturer.git"
+  },
+  "homepage": "https://github.com/crowroser/local-architecturer#readme",
+  "bugs": {
+    "url": "https://github.com/crowroser/local-architecturer/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }

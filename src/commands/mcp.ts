@@ -15,13 +15,14 @@ export const mcpCommand = new Command('mcp')
       logger.info(`Project path: ${options.path}`);
       logger.info(`Transport: ${options.transport}`);
       
+      const server = new ArchitectureMcpServer(options.path);
+      
       if (options.transport === 'http') {
         logger.info(`HTTP Port: ${options.port}`);
-        logger.warn('HTTP transport not yet implemented, using stdio');
+        await server.startHttp(parseInt(options.port));
+      } else {
+        await server.startStdio();
       }
-      
-      const server = new ArchitectureMcpServer(options.path);
-      await server.start();
     } catch (error) {
       logger.error(`MCP server failed to start: ${error}`);
       process.exit(1);

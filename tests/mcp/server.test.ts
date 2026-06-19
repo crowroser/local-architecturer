@@ -56,7 +56,7 @@ services:
     expect(server).toBeDefined();
   });
 
-  it('should have start method', () => {
-    expect(typeof server.start).toBe('function');
+  it('should have startStdio method', () => {
+    expect(typeof server.startStdio).toBe('function');
   });
 });

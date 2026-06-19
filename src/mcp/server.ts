@@ -5,6 +5,7 @@ import { Scanner } from '../core/scanner.js';
 import { PathResolver } from '../core/path-resolver.js';
 import { MermaidBuilder } from './mermaid-builder.js';
 import { PortConflictDetector } from './port-conflict-detector.js';
+import { DockerfileParser } from '../parsers/dockerfile-parser.js';
 import type { DockerService } from '../types/index.js';
 
 export class ArchitectureMcpServer {
@@ -311,11 +312,185 @@ export class ArchitectureMcpServer {
         };
       }
     );
+
+    this.server.tool(
+      'analyze_dockerfile',
+      'Analyze a Dockerfile for base image, exposed ports, build args, and multi-stage builds',
+      {
+        path: z.string().describe('Path to the Dockerfile'),
+        projectPath: z.string().optional().describe('Project root path'),
+      },
+      async ({ path, projectPath }) => {
+        const resolver = projectPath ? new PathResolver(projectPath) : this.resolver;
+        const parser = new DockerfileParser(resolver);
+        const result = parser.parse(path);
+        
+        if (!result) {
+          return {
+            content: [{ type: 'text', text: `Dockerfile not found or invalid: ${path}` }],
+            isError: true,
+          };
+        }
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+    );
+
+    this.server.tool(
+      'get_health_score',
+      'Calculate a health score for the project based on dependency complexity and structure',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const result = await scanner.scan();
+        
+        const packageCount = result.packages.length;
+        const serviceCount = result.dockerConfigs.reduce(
+          (sum, c) => sum + (c.serviceDetails?.length || 0), 0
+        );
+        const edgeCount = result.dependencies.edges.length;
+        
+        let score = 100;
+        const issues: string[] = [];
+        
+        if (packageCount > 20) {
+          score -= 10;
+          issues.push('High package count (>20)');
+        }
+        
+        if (serviceCount > 10) {
+          score -= 10;
+          issues.push('High service count (>10)');
+        }
+        
+        if (edgeCount > packageCount * 3) {
+          score -= 15;
+          issues.push('Complex dependency graph');
+        }
+        
+        const packageNames = result.packages.map(p => p.name);
+        const hasCircularDeps = this.checkCircularDependencies(result.dependencies.edges, packageNames);
+        if (hasCircularDeps) {
+          score -= 20;
+          issues.push('Circular dependencies detected');
+        }
+        
+        const output = {
+          score: Math.max(0, score),
+          rating: score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Poor',
+          metrics: {
+            packages: packageCount,
+            services: serviceCount,
+            edges: edgeCount,
+          },
+          issues,
+        };
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+        };
+      }
+    );
+
+    this.server.tool(
+      'search_packages',
+      'Search for packages by name or keyword',
+      {
+        query: z.string().describe('Search query (package name or keyword)'),
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ query, path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const result = await scanner.scan();
+        
+        const searchTerm = query.toLowerCase();
+        const matchingPackages = result.packages.filter(pkg => 
+          pkg.name.toLowerCase().includes(searchTerm)
+        );
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(matchingPackages, null, 2) }],
+        };
+      }
+    );
   }
 
-  async start() {
+  private checkCircularDependencies(edges: Array<{ source: string; target: string; type: string }>, packageNames: string[]): boolean {
+    const graph = new Map<string, string[]>();
+    
+    for (const pkg of packageNames) {
+      graph.set(pkg, []);
+    }
+    
+    for (const edge of edges) {
+      if (edge.type === 'depends' && graph.has(edge.source)) {
+        graph.get(edge.source)!.push(edge.target);
+      }
+    }
+    
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+    
+    const dfs = (node: string): boolean => {
+      visited.add(node);
+      recursionStack.add(node);
+      
+      const neighbors = graph.get(node) || [];
+      for (const neighbor of neighbors) {
+        if (!visited.has(neighbor)) {
+          if (dfs(neighbor)) return true;
+        } else if (recursionStack.has(neighbor)) {
+          return true;
+        }
+      }
+      
+      recursionStack.delete(node);
+      return false;
+    };
+    
+    for (const pkg of packageNames) {
+      if (!visited.has(pkg)) {
+        if (dfs(pkg)) return true;
+      }
+    }
+    
+    return false;
+  }
+
+  async startStdio() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     console.error('MCP server started on stdio');
+  }
+
+  async startHttp(port: number = 3001) {
+    const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
+    const express = await import('express');
+    
+    const app = express.default();
+    app.use(express.default.json());
+    
+    app.post('/mcp', async (req, res) => {
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+      });
+      
+      await this.server.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+    });
+    
+    app.get('/mcp', async (req, res) => {
+      res.json({ status: 'ok', server: 'local-architecturer' });
+    });
+    
+    app.listen(port, () => {
+      console.error(`MCP server started on http://localhost:${port}/mcp`);
+    });
   }
 }

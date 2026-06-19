@@ -33,18 +33,44 @@ export class ArchitectureMcpServer {
   private registerTools() {
     this.server.tool(
       'analyze_project',
-      'Analyze the entire project structure including packages, Docker configs, and dependencies',
+      'Analyze the entire project structure including packages, Docker configs, dependencies, database schemas, proxy routing, data flows, security boundaries, AI models, and hardware devices',
       {
         path: z.string().optional().describe('Project root path (defaults to current directory)'),
       },
       async ({ path }) => {
         const scanner = path ? new Scanner(new PathResolver(path)) : this.scanner;
         const result = await scanner.scan();
+
+        const [dbSchemas, proxyConfigs, dataFlows] = await Promise.all([
+          scanner.getDBSchemas(),
+          scanner.getProxyConfigs(),
+          scanner.getDataFlows(),
+        ]);
+
+        const allServices = result.dockerConfigs.flatMap(c => c.serviceDetails || []);
+        const securityAnalyzer = new SecurityBoundaryAnalyzer();
+        const securityBoundaries = securityAnalyzer.analyze(result.dockerConfigs);
+
+        const aiProfiler = new AIProfiler();
+        const aiProfile = aiProfiler.profile(allServices);
+
+        const hardwareDevices = result.dependencies.nodes.filter(n => n.type === 'hardware');
+
+        const fullResult = {
+          ...result,
+          databaseSchemas: dbSchemas,
+          proxyConfigs,
+          dataFlows,
+          securityBoundaries,
+          aiProfile,
+          hardwareDevices,
+        };
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(fullResult, null, 2),
             },
           ],
         };

@@ -1,6 +1,6 @@
 {
   "name": "local-architecturer",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Local architecture analyzer for pnpm monorepos and Docker configs",
   "bin": {
     "arch-viz": "./dist/cli.js"

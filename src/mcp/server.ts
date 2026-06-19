@@ -6,6 +6,11 @@ import { PathResolver } from '../core/path-resolver.js';
 import { MermaidBuilder } from './mermaid-builder.js';
 import { PortConflictDetector } from './port-conflict-detector.js';
 import { DockerfileParser } from '../parsers/dockerfile-parser.js';
+import { CircularDetector } from '../core/circular-detector.js';
+import { DockerAuditor } from '../core/docker-auditor.js';
+import { EnvAnalyzer } from '../core/env-analyzer.js';
+import { AIProfiler } from '../core/ai-profiler.js';
+import { SecurityBoundaryAnalyzer } from '../core/security-boundary-analyzer.js';
 import type { DockerService } from '../types/index.js';
 
 export class ArchitectureMcpServer {
@@ -19,7 +24,7 @@ export class ArchitectureMcpServer {
     
     this.server = new McpServer({
       name: 'local-architecturer',
-      version: '0.1.0',
+      version: '0.3.0',
     });
 
     this.registerTools();
@@ -373,8 +378,7 @@ export class ArchitectureMcpServer {
           issues.push('Complex dependency graph');
         }
         
-        const packageNames = result.packages.map(p => p.name);
-        const hasCircularDeps = this.checkCircularDependencies(result.dependencies.edges, packageNames);
+        const hasCircularDeps = CircularDetector.hasCircularDependencies(result.dependencies);
         if (hasCircularDeps) {
           score -= 20;
           issues.push('Circular dependencies detected');
@@ -419,48 +423,206 @@ export class ArchitectureMcpServer {
         };
       }
     );
-  }
 
-  private checkCircularDependencies(edges: Array<{ source: string; target: string; type: string }>, packageNames: string[]): boolean {
-    const graph = new Map<string, string[]>();
-    
-    for (const pkg of packageNames) {
-      graph.set(pkg, []);
-    }
-    
-    for (const edge of edges) {
-      if (edge.type === 'depends' && graph.has(edge.source)) {
-        graph.get(edge.source)!.push(edge.target);
+    this.server.tool(
+      'detect_circular_dependencies',
+      'Detect circular dependencies in the project and return affected packages and cycles',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const result = await scanner.scan();
+        
+        const cycles = CircularDetector.detect(result.dependencies);
+        const affectedPackages = CircularDetector.getAffectedPackages(result.dependencies);
+        
+        const output = {
+          hasCircularDependencies: cycles.length > 0,
+          totalCycles: cycles.length,
+          affectedPackages,
+          cycles: cycles.map(c => ({
+            path: c.cycle,
+            edgeCount: c.edges.length,
+          })),
+        };
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+        };
       }
-    }
-    
-    const visited = new Set<string>();
-    const recursionStack = new Set<string>();
-    
-    const dfs = (node: string): boolean => {
-      visited.add(node);
-      recursionStack.add(node);
-      
-      const neighbors = graph.get(node) || [];
-      for (const neighbor of neighbors) {
-        if (!visited.has(neighbor)) {
-          if (dfs(neighbor)) return true;
-        } else if (recursionStack.has(neighbor)) {
-          return true;
+    );
+
+    this.server.tool(
+      'audit_docker_security',
+      'Audit Docker services for security issues, resource limits, and best practices',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const result = await scanner.scan();
+        
+        const auditResult = DockerAuditor.audit(result.dockerConfigs);
+        const deployIssues = DockerAuditor.auditDeploySettings(result.dockerConfigs);
+        
+        const output = {
+          ...auditResult,
+          deployIssues,
+          recommendations: [
+            ...auditResult.issues.filter(i => i.severity === 'error').map(i => `Fix: ${i.message}`),
+            ...auditResult.issues.filter(i => i.severity === 'warning').map(i => `Consider: ${i.message}`),
+          ],
+        };
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+        };
+      }
+    );
+
+    this.server.tool(
+      'get_env_coverage',
+      'Analyze environment variable coverage between .env files, source code, and Docker services',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const result = await scanner.scan();
+        
+        const envAnalyzer = new EnvAnalyzer(resolver);
+        const coverage = await envAnalyzer.analyze(result.dockerConfigs);
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(coverage, null, 2) }],
+        };
+      }
+    );
+
+    this.server.tool(
+      'get_database_schemas',
+      'Get database schemas from Prisma, Laravel, TypeORM, Drizzle configurations',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const schemas = await scanner.getDBSchemas();
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(schemas, null, 2) }],
+        };
+      }
+    );
+
+    this.server.tool(
+      'get_proxy_configurations',
+      'Get reverse proxy routing configurations from Traefik, Nginx, Caddy',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const configs = await scanner.getProxyConfigs();
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(configs, null, 2) }],
+        };
+      }
+    );
+
+    this.server.tool(
+      'get_data_flows',
+      'Get data processing pipeline configurations and auto-detected flows',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const flows = await scanner.getDataFlows();
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(flows, null, 2) }],
+        };
+      }
+    );
+
+    this.server.tool(
+      'get_security_boundaries',
+      'Analyze security boundaries for volume mounts, permissions, and sensitive paths',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const result = await scanner.scan();
+        
+        const analyzer = new SecurityBoundaryAnalyzer();
+        const boundaries = analyzer.analyze(result.dockerConfigs);
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(boundaries, null, 2) }],
+        };
+      }
+    );
+
+    this.server.tool(
+      'get_ai_profile',
+      'Profile AI models from Docker images and calculate VRAM requirements',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const result = await scanner.scan();
+        
+        const allServices: DockerService[] = [];
+        for (const config of result.dockerConfigs) {
+          if (config.serviceDetails) {
+            allServices.push(...config.serviceDetails);
+          }
         }
+        
+        const profiler = new AIProfiler();
+        const profile = profiler.profile(allServices);
+        
+        return {
+          content: [{ type: 'text', text: JSON.stringify(profile, null, 2) }],
+        };
       }
-      
-      recursionStack.delete(node);
-      return false;
-    };
-    
-    for (const pkg of packageNames) {
-      if (!visited.has(pkg)) {
-        if (dfs(pkg)) return true;
+    );
+
+    this.server.tool(
+      'get_hardware_devices',
+      'Detect hardware devices (serial, USB, GPIO) from Docker configurations',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const scanner = new Scanner(resolver);
+        const result = await scanner.scan();
+        
+        const hardwareNodes = result.dependencies.nodes.filter(n => n.type === 'hardware');
+        const hardwareEdges = result.dependencies.edges.filter(e => e.type === 'connects');
+        
+        return {
+          content: [{ 
+            type: 'text', 
+            text: JSON.stringify({ devices: hardwareNodes, connections: hardwareEdges }, null, 2) 
+          }],
+        };
       }
-    }
-    
-    return false;
+    );
   }
 
   async startStdio() {

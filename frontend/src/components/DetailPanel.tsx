@@ -1,5 +1,15 @@
 import type { Node, Edge } from '@xyflow/react';
 
+interface NodeData {
+  label: string;
+  version?: string;
+  path?: string;
+  image?: string;
+  ports?: string[];
+  dependencies?: string[];
+  deviceType?: string;
+}
+
 interface DetailPanelProps {
   node: Node | null;
   edges: Edge[];
@@ -9,12 +19,22 @@ interface DetailPanelProps {
 export default function DetailPanel({ node, edges, onClose }: DetailPanelProps) {
   if (!node) return null;
 
+  const data = node.data as unknown as NodeData;
   const connectedEdges = edges.filter(
     edge => edge.source === node.id || edge.target === node.id
   );
 
   const incomingEdges = connectedEdges.filter(edge => edge.target === node.id);
   const outgoingEdges = connectedEdges.filter(edge => edge.source === node.id);
+
+  const getNodeIcon = () => {
+    if (node.type === 'hardware') {
+      const deviceType = data.deviceType || 'serial';
+      const icons: Record<string, string> = { serial: '🔌', usb: '⚡', gpio: '🔧' };
+      return icons[deviceType] || '🔌';
+    }
+    return node.type === 'package' ? '📦' : '🐳';
+  };
 
   return (
     <div style={{
@@ -37,7 +57,7 @@ export default function DetailPanel({ node, edges, onClose }: DetailPanelProps) 
         alignItems: 'center',
       }}>
         <h3 style={{ margin: 0, fontSize: '16px' }}>
-          {node.type === 'package' ? '📦' : '🐳'} {node.data.label}
+          {getNodeIcon()} {data.label}
         </h3>
         <button
           onClick={onClose}
@@ -58,11 +78,17 @@ export default function DetailPanel({ node, edges, onClose }: DetailPanelProps) 
           <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#666' }}>Details</h4>
           <div style={{ fontSize: '13px' }}>
             <div><strong>Type:</strong> {node.type}</div>
-            {node.data.version && <div><strong>Version:</strong> {node.data.version}</div>}
-            {node.data.path && <div><strong>Path:</strong> {node.data.path}</div>}
-            {node.data.image && <div><strong>Image:</strong> {node.data.image}</div>}
-            {node.data.ports && node.data.ports.length > 0 && (
-              <div><strong>Ports:</strong> {node.data.ports.join(', ')}</div>
+            {data.version && <div><strong>Version:</strong> {data.version}</div>}
+            {data.path && <div><strong>Path:</strong> {data.path}</div>}
+            {data.image && <div><strong>Image:</strong> {data.image}</div>}
+            {node.type === 'hardware' && data.path && (
+              <div><strong>Device:</strong> {data.path}</div>
+            )}
+            {node.type === 'hardware' && data.deviceType && (
+              <div><strong>Protocol:</strong> {data.deviceType}</div>
+            )}
+            {data.ports && data.ports.length > 0 && (
+              <div><strong>Ports:</strong> {data.ports.join(', ')}</div>
             )}
           </div>
         </div>
@@ -71,9 +97,9 @@ export default function DetailPanel({ node, edges, onClose }: DetailPanelProps) 
           <div style={{ marginBottom: '16px' }}>
             <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#666' }}>Dependencies</h4>
             <div style={{ fontSize: '13px' }}>
-              {node.data.dependencies && node.data.dependencies.length > 0 ? (
+              {data.dependencies && data.dependencies.length > 0 ? (
                 <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                  {node.data.dependencies.map((dep: string) => (
+                  {data.dependencies.map((dep: string) => (
                     <li key={dep}>{dep}</li>
                   ))}
                 </ul>

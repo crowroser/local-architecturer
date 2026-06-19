@@ -12,6 +12,8 @@ export interface PackageInfo {
   path: string;
   dependencies: string[];
   devDependencies: string[];
+  type?: 'node' | 'php' | 'python';
+  language?: string;
 }
 
 export interface VolumeMapping {
@@ -29,6 +31,7 @@ export interface DockerService {
   dependsOn: string[];
   networks: string[];
   environment: Record<string, string>;
+  devices?: string[];
 }
 
 export interface DockerConfig {
@@ -62,7 +65,7 @@ export interface DependencyGraph {
 
 export interface DependencyNode {
   id: string;
-  type: 'package' | 'service';
+  type: 'package' | 'service' | 'hardware' | 'database' | 'gateway';
   name: string;
   metadata?: Record<string, unknown>;
 }
@@ -70,7 +73,7 @@ export interface DependencyNode {
 export interface DependencyEdge {
   source: string;
   target: string;
-  type: 'depends' | 'builds' | 'network';
+  type: 'depends' | 'builds' | 'network' | 'connects' | 'volume' | 'routes';
 }
 
 export interface AnalyzeOptions {

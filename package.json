@@ -1,0 +1,47 @@
+{
+  "name": "local-architecturer",
+  "version": "0.1.0",
+  "description": "Local architecture analyzer for pnpm monorepos and Docker configs",
+  "bin": {
+    "arch-viz": "./dist/cli.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "lint": "eslint src/**/*.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "latest",
+    "commander": "^12.0.0",
+    "express": "^4.18.0",
+    "fast-glob": "^3.3.0",
+    "js-yaml": "^4.1.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/js-yaml": "^4.0.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "eslint": "^8.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "architecture",
+    "analyzer",
+    "monorepo",
+    "pnpm",
+    "docker",
+    "mcp",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT"
+}

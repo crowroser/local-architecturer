@@ -15,9 +15,12 @@
 
 - Monorepo (pnpm workspace) analizi
 - Docker Compose parsing ve güvenlik denetimi
+- **Kubernetes manifest analizi** (Deployment, Service, Ingress, ConfigMap, Secret)
 - Bağımlılık grafiği görselleştirmesi
-- MCP Sunucusu — 39 tool ile AI asistanları için
+- MCP Sunucusu — **40 tool** ile AI asistanları için
 - React Flow ile interaktif dashboard
+- **TTL tabanlı cache mekanizması** ile performans optimizasyonu
+- **Structured logging** (JSON format desteği)
 - Port çakışma tespiti
 - CI/CD pipeline analizi (GitHub Actions, GitLab CI, Jenkins, CircleCI)
 - Git geçmiş zaman yolculuğu — mimari evrim analizi
@@ -47,3 +50,13 @@ arch-viz mcp -p /path/to/project
 # AI mimari inceleme
 arch-viz review -p /path/to/project --provider ollama --model qwen2.5
 ```
+
+## İstatistikler
+
+| Metrik | Değer |
+|--------|-------|
+| Test Sayısı | 132 |
+| MCP Tool Sayısı | 40 |
+| Parser Sayısı | 28 |
+| API Endpoint Sayısı | 18 |
+| Frontend Component | 12 |

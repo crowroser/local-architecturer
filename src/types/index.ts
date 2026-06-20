@@ -80,3 +80,33 @@ export interface AnalyzeOptions {
   path: string;
   format: 'json' | 'text';
 }
+
+export interface GraphResponse {
+  nodes: DependencyNode[];
+  edges: DependencyEdge[];
+  metadata: GraphMetadata;
+}
+
+export interface GraphMetadata {
+  name: string;
+  rootDir: string;
+  packageCount: number;
+  dockerServiceCount: number;
+}
+
+export interface CircularDependencyResponse {
+  hasCircularDependencies: boolean;
+  totalCycles: number;
+  affectedPackages: string[];
+  cycles: CycleInfo[];
+}
+
+export interface CycleInfo {
+  path: string[];
+  edgeCount: number;
+}
+
+export interface LayoutedNode extends DependencyNode {
+  x: number;
+  y: number;
+}

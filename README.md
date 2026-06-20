@@ -3,16 +3,21 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
+[![Tests](https://img.shields.io/badge/tests-132-passing-brightgreen.svg)](#test)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](#)
 
-Geliştiricilerin terminal üzerinden kendi projelerinin kök dizininde çalıştırabileceği; pnpm monorepo yapılarını ve Docker konfigürasyonlarını otomatik analiz eden bir Node.js CLI aracı ve MCP (Model Context Protocol) sunucusu.
+Geliştiricilerin terminal üzerinden kendi projelerinin kök dizininde çalıştırabileceği; pnpm monorepo yapılarını, Docker konfigürasyonlarını ve Kubernetes manifestlerini otomatik analiz eden bir Node.js CLI aracı ve MCP (Model Context Protocol) sunucusu.
 
 ## Özellikler
 
 - **Monorepo Analizi**: pnpm workspace yapısını otomatik tespit eder
 - **Docker Analizi**: docker-compose.yml dosyalarını parse eder
+- **Kubernetes Analizi**: Deployment, Service, Ingress, ConfigMap, Secret manifestlerini parse eder
 - **Bağımlılık Grafiği**: Paketler ve servisler arasındaki bağımlılıkları görselleştirir
-- **MCP Sunucusu**: AI asistanları için 39 tool sunar
+- **MCP Sunucusu**: AI asistanları için 40 tool sunar
 - **Web Dashboard**: React Flow ile interaktif grafik görünümü
+- **Cache Mekanizması**: TTL tabanlı scan cache ile performans optimizasyonu
+- **Structured Logging**: JSON formatında loglama desteği
 - **Port Çakışma Tespiti**: Docker servislerindeki port çakışmalarını tespit eder
 - **CI/CD Pipeline Analizi**: GitHub Actions, GitLab CI, Jenkins, CircleCI yapılandırmalarını parse eder
 - **Git Geçmiş Zaman Yolculuğu**: Mimari evrimi commit geçmişinden analiz eder
@@ -104,8 +109,10 @@ arch-viz time-travel -p /path/to/project -c 50
 | `/api/proxy` | GET | Reverse proxy yapılandırmaları |
 | `/api/dataflow` | GET | Data flow pipeline'ları |
 | `/api/security-boundaries` | GET | Güvenlik sınırları |
+| `/api/kubernetes` | GET | Kubernetes manifest analizi |
+| `POST /api/cache/invalidate` | POST | Cache temizleme |
 
-## MCP Araçları (39 Tool)
+## MCP Araçları (40 Tool)
 
 ### Çekirdek Analiz
 | Araç | Açıklama |
@@ -127,6 +134,11 @@ arch-viz time-travel -p /path/to/project -c 50
 | `audit_docker_security` | Docker güvenlik denetimi |
 | `parse_docker_compose_file` | Tek Docker Compose dosyası analizi |
 | `detect_port_conflicts` | Port çakışması tespiti |
+
+### Kubernetes
+| Araç | Açıklama |
+|------|----------|
+| `analyze_kubernetes` | Kubernetes manifest analizi (Deployment, Service, Ingress, ConfigMap, Secret) |
 
 ### Veritabanı ve Proxy
 | Araç | Açıklama |
@@ -166,6 +178,7 @@ arch-viz time-travel -p /path/to/project -c 50
 | `analyze_dataflow_bottlenecks` | DataFlow darboğaz analizi |
 | `get_mermaid_diagram` | Mermaid diyagram üretimi |
 
+### Dil Desteği
 | Araç | Açıklama |
 |------|----------|
 | `parse_python_dependencies` | Python bağımlılık parse |
@@ -200,7 +213,7 @@ cd frontend && npm install
 # Geliştirme modunda çalıştır
 npm run dev
 
-# Testleri çalıştır
+# Testleri çalıştır (132 test)
 npm test
 
 # Build al
@@ -216,7 +229,7 @@ local-architecturer/
 │   ├── cli.ts                    # Ana CLI giriş noktası (5 komut)
 │   ├── commands/                 # CLI komutları (analyze, serve, mcp, review, time-travel)
 │   ├── core/                     # Çekirdek modüller
-│   │   ├── scanner.ts            # Merkez orkestratör
+│   │   ├── scanner.ts            # Merkez orkestratör (cache mekanizmalı)
 │   │   ├── path-resolver.ts      # Dosya sistemi soyutlama
 │   │   ├── docker-scanner.ts     # Docker konfigürasyon tespiti
 │   │   ├── circular-detector.ts  # Döngüsel bağımlılık tespiti
@@ -227,25 +240,43 @@ local-architecturer/
 │   │   ├── dataflow-analyzer.ts  # DataFlow darboğaz analizi
 │   │   ├── build-edge-generator.ts # CI build kenar üretimi
 │   │   └── routes-edge-generator.ts # Proxy routes kenar üretimi
-│   ├── parsers/                  # 32+ config parser
+│   ├── parsers/                  # 28 config parser
 │   │   ├── workspace-parser.ts   # pnpm-workspace.yaml
 │   │   ├── package-parser.ts     # package.json
 │   │   ├── docker-compose-parser.ts
 │   │   ├── dockerfile-parser.ts
+│   │   ├── kubernetes-parser.ts  # Kubernetes manifestleri
 │   │   ├── prisma-parser.ts, typeorm-parser.ts, drizzle-parser.ts
 │   │   ├── sequelize-parser.ts, sqlalchemy-parser.ts
 │   │   ├── nginx-parser.ts, traefik-parser.ts, caddy-parser.ts
 │   │   ├── github-actions-parser.ts, gitlab-ci-parser.ts, jenkins-parser.ts, circleci-parser.ts
 │   │   ├── composer-parser.ts, python-parser.ts
 │   │   └── ... (ai-model, hardware, dataflow, proxy, db-schema, env, ci-cd, dependency)
-│   ├── mcp/                      # MCP sunucu ve 39 tool
-│   ├── server/                   # Express sunucu (17+ REST endpoint)
+│   ├── mcp/                      # MCP sunucu ve 40 tool
+│   ├── server/                   # Express sunucu (18+ REST endpoint)
 │   ├── ai/                       # LLM review engine (Ollama/OpenRouter/LMStudio)
 │   ├── types/                    # TypeScript tip tanımları
-│   └── utils/                    # Yardımcı modüller
+│   └── utils/                    # Yardımcı modüller (structured logging destekli)
 ├── frontend/                     # React 18 + Vite 5 + @xyflow/react + dagre
-├── tests/                        # Vitest test suite
+├── tests/                        # 132 Vitest test
 └── dist/                         # Build çıktıları
+```
+
+## Testler
+
+Proje **132 test** ile kapsamlı bir test kapsamına sahiptir:
+
+- **Parser Testleri**: workspace, package, dependency, docker-compose, dockerfile, prisma, github-actions, hardware, traefik, nginx, db-schema, kubernetes, python, composer, env
+- **Core Testleri**: scanner, circular-detector, docker-scanner, docker-auditor, path-resolver
+- **MCP Testleri**: server, mermaid-builder, port-conflict-detector
+- **Server Testleri**: express-server
+
+```bash
+# Tüm testleri çalıştır
+npm test
+
+# İzleme modunda
+npm run test:watch
 ```
 
 ## Lisans

@@ -11,7 +11,7 @@ const program = new Command();
 program
   .name('arch-viz')
   .description('Local architecture analyzer for pnpm monorepos and Docker configs')
-  .version('0.3.0');
+  .version('0.4.0');
 
 program.addCommand(analyzeCommand);
 program.addCommand(serveCommand);

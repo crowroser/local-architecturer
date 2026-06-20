@@ -27,6 +27,7 @@ import { GatewayDetector } from '../core/gateway-detector.js';
 import { DataFlowAnalyzer } from '../core/dataflow-analyzer.js';
 import { BuildEdgeGenerator } from '../core/build-edge-generator.js';
 import { RoutesEdgeGenerator } from '../core/routes-edge-generator.js';
+import { KubernetesParser } from '../parsers/kubernetes-parser.js';
 import type { DockerService } from '../types/index.js';
 
 export class ArchitectureMcpServer {
@@ -1069,6 +1070,40 @@ export class ArchitectureMcpServer {
 
         return {
           content: [{ type: 'text', text: JSON.stringify(edges, null, 2) }],
+        };
+      }
+    );
+
+    this.server.tool(
+      'analyze_kubernetes',
+      'Analyze Kubernetes manifests (Deployments, Services, Ingresses, ConfigMaps, Secrets) and detect connections',
+      {
+        path: z.string().optional().describe('Project root path'),
+      },
+      async ({ path }) => {
+        const resolver = path ? new PathResolver(path) : this.resolver;
+        const parser = new KubernetesParser(resolver);
+        const analysis = await parser.parseAll();
+
+        const nodes = parser.toGraphNodes(analysis);
+        const edges = parser.toGraphEdges(analysis);
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              analysis,
+              graph: { nodes, edges },
+              summary: {
+                deployments: analysis.deployments.length,
+                services: analysis.services.length,
+                ingresses: analysis.ingresses.length,
+                configMaps: analysis.configMaps.length,
+                secrets: analysis.secrets.length,
+                connections: analysis.connections.length,
+              },
+            }, null, 2),
+          }],
         };
       }
     );

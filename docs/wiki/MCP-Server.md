@@ -1,6 +1,6 @@
 # MCP Sunucusu
 
-Model Context Protocol (MCP) sunucusu, AI asistanlarının (Cursor, Windsurf vb.) projenizi analiz etmesini sağlar. 39 tool ile kapsamlı proje analizi sunar.
+Model Context Protocol (MCP) sunucusu, AI asistanlarının (Cursor, Windsurf vb.) projenizi analiz etmesini sağlar. **40 tool** ile kapsamlı proje analizi sunar.
 
 ## Başlatma
 
@@ -189,6 +189,47 @@ Port çakışmalarını tespit eder.
   "name": "detect_port_conflicts",
   "arguments": {
     "path": "/isteğe bağlı/proje/yolu"
+  }
+}
+```
+
+### Kubernetes
+
+#### analyze_kubernetes
+
+Kubernetes manifestlerini analiz eder (Deployment, Service, Ingress, ConfigMap, Secret).
+
+```json
+{
+  "name": "analyze_kubernetes",
+  "arguments": {
+    "path": "/isteğe bağlı/proje/yolu"
+  }
+}
+```
+
+**Çıktı Örneği:**
+```json
+{
+  "analysis": {
+    "deployments": [...],
+    "services": [...],
+    "ingresses": [...],
+    "configMaps": [...],
+    "secrets": [...],
+    "connections": [...]
+  },
+  "graph": {
+    "nodes": [...],
+    "edges": [...]
+  },
+  "summary": {
+    "deployments": 2,
+    "services": 3,
+    "ingresses": 1,
+    "configMaps": 2,
+    "secrets": 1,
+    "connections": 4
   }
 }
 ```
@@ -539,7 +580,7 @@ SQLAlchemy ORM model dosyalarını parse eder.
 
 ### Windsurf
 
-1. Ayarlar > MCP Sunucuları bölümüne gidin
+1. Ayarlar > MCP Sunucaları bölümüne gidin
 2. Yeni sunucu ekleyin:
    ```json
    {

@@ -12,7 +12,17 @@ import { DataFlowParser } from '../parsers/dataflow-parser.js';
 import { SequelizeParser } from '../parsers/sequelize-parser.js';
 import { SQLAlchemyParser } from '../parsers/sqlalchemy-parser.js';
 import { GatewayDetector } from './gateway-detector.js';
+import { KubernetesParser } from '../parsers/kubernetes-parser.js';
 import type { ProjectStructure, DependencyGraph, DependencyNode, DependencyEdge, PackageInfo } from '../types/index.js';
+
+interface CacheEntry<T> {
+  data: T;
+  expires: number;
+}
+
+export interface ScannerOptions {
+  cacheTtlMs?: number;
+}
 
 export class Scanner {
   private resolver: PathResolver;
@@ -28,8 +38,11 @@ export class Scanner {
   private sequelizeParser: SequelizeParser;
   private sqlalchemyParser: SQLAlchemyParser;
   private gatewayDetector: GatewayDetector;
+  private kubernetesParser: KubernetesParser;
+  private cache = new Map<string, CacheEntry<unknown>>();
+  private cacheTtlMs: number;
 
-  constructor(resolver: PathResolver) {
+  constructor(resolver: PathResolver, options?: ScannerOptions) {
     this.resolver = resolver;
     this.dockerScanner = new DockerScanner(resolver);
     this.workspaceParser = new WorkspaceParser(resolver);
@@ -43,9 +56,34 @@ export class Scanner {
     this.sequelizeParser = new SequelizeParser(resolver);
     this.sqlalchemyParser = new SQLAlchemyParser(resolver);
     this.gatewayDetector = new GatewayDetector(resolver);
+    this.kubernetesParser = new KubernetesParser(resolver);
+    this.cacheTtlMs = options?.cacheTtlMs ?? 30_000;
+  }
+
+  private getFromCache<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (entry && entry.expires > Date.now()) {
+      return entry.data as T;
+    }
+    this.cache.delete(key);
+    return null;
+  }
+
+  private setCache<T>(key: string, data: T): void {
+    this.cache.set(key, {
+      data,
+      expires: Date.now() + this.cacheTtlMs,
+    });
+  }
+
+  clearCache(): void {
+    this.cache.clear();
   }
 
   async scan(): Promise<ProjectStructure> {
+    const cached = this.getFromCache<ProjectStructure>('scan');
+    if (cached) return cached;
+
     const parsedPackages = this.scanPackages();
     const phpPackages = this.scanPhpPackages();
     const pythonPackages = this.scanPythonPackages();
@@ -93,13 +131,16 @@ export class Scanner {
       })),
     ];
 
-    return {
+    const result: ProjectStructure = {
       rootDir: this.resolver.getRootDir(),
       name: this.getProjectName(),
       packages,
       dockerConfigs,
       dependencies,
     };
+
+    this.setCache('scan', result);
+    return result;
   }
 
   private getProjectName(): string {
@@ -271,21 +312,45 @@ export class Scanner {
   }
 
   async getDBSchemas() {
+    const cached = this.getFromCache<ReturnType<typeof this.dbSchemaParser.parseAll>>('dbSchemas');
+    if (cached) return cached;
+
     const baseSchemas = await this.dbSchemaParser.parseAll();
     const sequelizeSchemas = this.sequelizeParser.parseAll();
     const sqlalchemySchemas = this.sqlalchemyParser.parseAll();
-    return [...baseSchemas, ...sequelizeSchemas, ...sqlalchemySchemas];
+    const result = [...baseSchemas, ...sequelizeSchemas, ...sqlalchemySchemas];
+    this.setCache('dbSchemas', result);
+    return result;
   }
 
   async getProxyConfigs() {
+    const cached = this.getFromCache<ReturnType<typeof this.proxyParser.parseAll>>('proxyConfigs');
+    if (cached) return cached;
+
     const dockerConfigs = await this.dockerScanner.scan();
     const allServices = dockerConfigs.flatMap(c => c.serviceDetails || []);
-    return this.proxyParser.parseAll(allServices);
+    const result = this.proxyParser.parseAll(allServices);
+    this.setCache('proxyConfigs', result);
+    return result;
   }
 
   async getDataFlows() {
+    const cached = this.getFromCache<ReturnType<typeof this.dataFlowParser.parseAll>>('dataFlows');
+    if (cached) return cached;
+
     const dockerConfigs = await this.dockerScanner.scan();
     const allServices = dockerConfigs.flatMap(c => c.serviceDetails || []);
-    return this.dataFlowParser.parseAll(allServices);
+    const result = this.dataFlowParser.parseAll(allServices);
+    this.setCache('dataFlows', result);
+    return result;
+  }
+
+  async getKubernetesAnalysis() {
+    const cached = this.getFromCache<ReturnType<typeof this.kubernetesParser.parseAll>>('kubernetes');
+    if (cached) return cached;
+
+    const result = await this.kubernetesParser.parseAll();
+    this.setCache('kubernetes', result);
+    return result;
   }
 }

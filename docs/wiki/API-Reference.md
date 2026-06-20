@@ -363,3 +363,80 @@ Güvenlik sınırlarını analiz eder.
   }
 }
 ```
+
+### GET /api/kubernetes
+
+Kubernetes manifestlerini analiz eder (Deployment, Service, Ingress, ConfigMap, Secret).
+
+**Yanıt:**
+```json
+{
+  "analysis": {
+    "deployments": [
+      {
+        "kind": "Deployment",
+        "name": "web-app",
+        "namespace": "production",
+        "replicas": 3,
+        "containers": [
+          {
+            "name": "web",
+            "image": "nginx:latest",
+            "ports": [80],
+            "env": {}
+          }
+        ]
+      }
+    ],
+    "services": [
+      {
+        "kind": "Service",
+        "name": "web-service",
+        "serviceType": "ClusterIP",
+        "ports": [
+          {
+            "name": "http",
+            "port": 80,
+            "targetPort": 8080,
+            "protocol": "TCP"
+          }
+        ]
+      }
+    ],
+    "ingresses": [...],
+    "configMaps": [...],
+    "secrets": [...],
+    "connections": [
+      {
+        "from": "web-service",
+        "to": "web-app",
+        "type": "service-to-deployment"
+      }
+    ]
+  },
+  "graph": {
+    "nodes": [...],
+    "edges": [...]
+  },
+  "summary": {
+    "deployments": 1,
+    "services": 1,
+    "ingresses": 0,
+    "configMaps": 0,
+    "secrets": 0,
+    "connections": 1
+  }
+}
+```
+
+### POST /api/cache/invalidate
+
+Cache'i temizler.
+
+**Yanıt:**
+```json
+{
+  "status": "ok",
+  "message": "Cache invalidated"
+}
+```

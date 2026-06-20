@@ -22,6 +22,7 @@ import DatabasePanel from './DatabasePanel';
 import ProxyView from './ProxyView';
 import DataFlowView from './DataFlowView';
 import SecurityPanel from './SecurityPanel';
+import type { GraphResponse, CircularDependencyResponse, DependencyNode, DependencyEdge, PackageInfo } from '../../src/types/index';
 
 const nodeTypes = {
   package: CustomNode,
@@ -30,6 +31,11 @@ const nodeTypes = {
   database: CustomNode,
   gateway: CustomNode,
 };
+
+interface HistorySnapshot {
+  commitHash: string;
+  packages: PackageInfo[];
+}
 
 export default function GraphView() {
   const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
@@ -55,8 +61,8 @@ export default function GraphView() {
         fetch('/api/graph'),
         fetch('/api/circular'),
       ]);
-      const data = await graphResponse.json();
-      const circularData = await circularResponse.json();
+      const data: GraphResponse = await graphResponse.json();
+      const circularData: CircularDependencyResponse = await circularResponse.json();
       
       const layoutedNodes = applyLayout(data.nodes, data.edges);
       
@@ -69,14 +75,14 @@ export default function GraphView() {
         }
       }
 
-      const flowNodes: Node[] = layoutedNodes.map((node: any) => ({
+      const flowNodes: Node[] = layoutedNodes.map((node: DependencyNode & { x: number; y: number }) => ({
         id: node.id,
         type: node.type,
         position: { x: node.x, y: node.y },
         data: { label: node.name, ...node },
       }));
 
-      const flowEdges: Edge[] = data.edges.map((edge: any, index: number) => {
+      const flowEdges: Edge[] = data.edges.map((edge: DependencyEdge, index: number) => {
         const isCircular = circularEdgeSet.has(`${edge.source}->${edge.target}`);
         const isHardware = edge.type === 'connects';
         const isVolume = edge.type === 'volume';
@@ -130,11 +136,11 @@ export default function GraphView() {
   const handleCommitSelect = useCallback(async (commitHash: string) => {
     try {
       const response = await fetch(`/api/history/${commitHash}`);
-      const snapshot = await response.json();
+      const snapshot: HistorySnapshot = await response.json();
       if (snapshot && snapshot.packages) {
-        const newNodes: Node[] = snapshot.packages.map((pkg: any, idx: number) => ({
+        const newNodes: Node[] = snapshot.packages.map((pkg: PackageInfo, idx: number) => ({
           id: pkg.name || `pkg-${idx}`,
-          type: 'package',
+          type: 'package' as const,
           position: { x: 100 + (idx % 5) * 200, y: 100 + Math.floor(idx / 5) * 100 },
           data: { label: pkg.name, ...pkg },
         }));

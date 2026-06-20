@@ -9,6 +9,9 @@ import { HardwareParser } from '../parsers/hardware-parser.js';
 import { DBSchemaParser } from '../parsers/db-schema-parser.js';
 import { ProxyParser } from '../parsers/proxy-parser.js';
 import { DataFlowParser } from '../parsers/dataflow-parser.js';
+import { SequelizeParser } from '../parsers/sequelize-parser.js';
+import { SQLAlchemyParser } from '../parsers/sqlalchemy-parser.js';
+import { GatewayDetector } from './gateway-detector.js';
 import type { ProjectStructure, DependencyGraph, DependencyNode, DependencyEdge, PackageInfo } from '../types/index.js';
 
 export class Scanner {
@@ -22,6 +25,9 @@ export class Scanner {
   private dbSchemaParser: DBSchemaParser;
   private proxyParser: ProxyParser;
   private dataFlowParser: DataFlowParser;
+  private sequelizeParser: SequelizeParser;
+  private sqlalchemyParser: SQLAlchemyParser;
+  private gatewayDetector: GatewayDetector;
 
   constructor(resolver: PathResolver) {
     this.resolver = resolver;
@@ -34,6 +40,9 @@ export class Scanner {
     this.dbSchemaParser = new DBSchemaParser(resolver);
     this.proxyParser = new ProxyParser(resolver);
     this.dataFlowParser = new DataFlowParser(resolver);
+    this.sequelizeParser = new SequelizeParser(resolver);
+    this.sqlalchemyParser = new SQLAlchemyParser(resolver);
+    this.gatewayDetector = new GatewayDetector(resolver);
   }
 
   async scan(): Promise<ProjectStructure> {
@@ -47,6 +56,12 @@ export class Scanner {
     const dependencies = this.buildDependencyGraph(allPackages, dockerConfigs);
     
     this.addExternalPackages(dependencies, phpPackages, pythonPackages);
+
+    const gateways = await this.gatewayDetector.detect();
+    const gatewayNodes = this.gatewayDetector.toGraphNodes(gateways);
+    const gatewayEdges = this.gatewayDetector.toGraphEdges(gateways);
+    dependencies.nodes.push(...gatewayNodes);
+    dependencies.edges.push(...gatewayEdges);
 
     const packages: PackageInfo[] = [
       ...allPackages.map(p => ({
@@ -256,7 +271,10 @@ export class Scanner {
   }
 
   async getDBSchemas() {
-    return this.dbSchemaParser.parseAll();
+    const baseSchemas = await this.dbSchemaParser.parseAll();
+    const sequelizeSchemas = this.sequelizeParser.parseAll();
+    const sqlalchemySchemas = this.sqlalchemyParser.parseAll();
+    return [...baseSchemas, ...sequelizeSchemas, ...sqlalchemySchemas];
   }
 
   async getProxyConfigs() {

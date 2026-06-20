@@ -1,7 +1,17 @@
 import type { DockerService } from '../types/index.js';
 import type { ProxyConfig, ProxyRoute } from '../types/proxy.js';
+import { PathResolver } from '../core/path-resolver.js';
+import { Logger } from '../utils/logger.js';
 
 export class TraefikParser {
+  private resolver?: PathResolver;
+  private logger: Logger;
+
+  constructor(resolver?: PathResolver) {
+    this.resolver = resolver;
+    this.logger = new Logger('[TraefikParser] ');
+  }
+
   parseFromServices(services: DockerService[]): ProxyConfig | null {
     const routes: ProxyRoute[] = [];
 
@@ -16,6 +26,26 @@ export class TraefikParser {
       platform: 'traefik',
       routes,
     };
+  }
+
+  async parseAll(): Promise<ProxyConfig[]> {
+    if (!this.resolver) return [];
+
+    const configs: ProxyConfig[] = [];
+    const files = this.resolver.findFilesSync('**/traefik.yml');
+    const files2 = this.resolver.findFilesSync('**/traefik.yaml');
+
+    for (const file of [...files, ...files2]) {
+      const config = this.parseTraefikFile(file);
+      if (config) configs.push(config);
+    }
+
+    return configs;
+  }
+
+  private parseTraefikFile(filePath: string): ProxyConfig | null {
+    void filePath;
+    return null;
   }
 
   private extractRoutes(service: DockerService): ProxyRoute[] {
@@ -33,12 +63,14 @@ export class TraefikParser {
       const portKey = `traefik.http.services.${routerName}.loadbalancer.server.port`;
       const tlsKey = `traefik.http.routers.${routerName}.tls`;
       const networkKey = `traefik.docker.network`;
+      const middlewareKey = `traefik.http.routers.${routerName}.middlewares`;
 
       const rule = labels[ruleKey] || '';
       const domain = this.extractDomain(rule);
       const port = labels[portKey] || '';
       const tls = tlsKey in labels;
       const network = labels[networkKey];
+      const middleware = this.parseMiddleware(labels[middlewareKey]);
 
       if (domain) {
         routes.push({
@@ -47,6 +79,7 @@ export class TraefikParser {
           targetService: service.name,
           network,
           tls,
+          middleware,
         });
       }
     }
@@ -67,6 +100,12 @@ export class TraefikParser {
     }
 
     return routes;
+  }
+
+  private parseMiddleware(value: string | undefined): string[] | undefined {
+    if (!value) return undefined;
+    const items = value.split(',').map(s => s.trim()).filter(Boolean);
+    return items.length > 0 ? items : undefined;
   }
 
   private extractDomain(rule: string): string {

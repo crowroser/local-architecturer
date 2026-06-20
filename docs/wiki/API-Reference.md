@@ -1,20 +1,20 @@
-# API Reference
+# API Referansı
 
 REST API endpoint'leri.
 
-## Base URL
+## Temel URL
 
 ```
 http://localhost:4000
 ```
 
-## Endpoints
+## Endpoint'ler
 
 ### GET /api/health
 
 Sağlık kontrolü.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "status": "ok",
@@ -26,7 +26,7 @@ Sağlık kontrolü.
 
 Bağımlılık grafiğini getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "nodes": [
@@ -57,7 +57,7 @@ Bağımlılık grafiğini getirir.
 
 Workspace paketlerini getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 [
   {
@@ -74,7 +74,7 @@ Workspace paketlerini getirir.
 
 Docker servislerini analiz ile getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "services": [
@@ -116,7 +116,7 @@ Docker servislerini analiz ile getirir.
 
 Tam proje analizini getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "rootDir": "/path/to/project",
@@ -134,7 +134,7 @@ Tam proje analizini getirir.
 
 Döngüsel bağımlılıkları tespit eder.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "hasCircularDependencies": true,
@@ -153,7 +153,7 @@ Döngüsel bağımlılıkları tespit eder.
 
 Docker güvenlik denetimi yapar.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "score": 75,
@@ -172,7 +172,7 @@ Docker güvenlik denetimi yapar.
 
 Env değişken eşleşmesini analiz eder.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "definedInEnv": ["DATABASE_URL", "API_KEY"],
@@ -186,7 +186,7 @@ Env değişken eşleşmesini analiz eder.
 
 AI model profili getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "models": [
@@ -204,10 +204,10 @@ AI model profili getirir.
 
 Git geçmişini tarar.
 
-**Query Parameters:**
-- `commits` (optional): Taranacak commit sayısı (varsayılan: 100)
+**Sorgu Parametreleri:**
+- `commits` (isteğe bağlı): Taranacak commit sayısı (varsayılan: 100)
 
-**Response:**
+**Yanıt:**
 ```json
 [
   {
@@ -227,7 +227,7 @@ Git geçmişini tarar.
 
 Tek bir commit'in anlık görüntüsünü getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "commitHash": "abc12345",
@@ -245,7 +245,7 @@ Tek bir commit'in anlık görüntüsünü getirir.
 
 CI/CD pipeline yapılandırmalarını getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 [
   {
@@ -272,7 +272,7 @@ CI/CD pipeline yapılandırmalarını getirir.
 
 Veritabanı şemalarını getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 [
   {
@@ -302,7 +302,7 @@ Veritabanı şemalarını getirir.
 
 Reverse proxy yapılandırmalarını getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 [
   {
@@ -324,7 +324,7 @@ Reverse proxy yapılandırmalarını getirir.
 
 Data flow pipeline'larını getirir.
 
-**Response:**
+**Yanıt:**
 ```json
 [
   {
@@ -344,7 +344,7 @@ Data flow pipeline'larını getirir.
 
 Güvenlik sınırlarını analiz eder.
 
-**Response:**
+**Yanıt:**
 ```json
 {
   "riskyVolumes": [

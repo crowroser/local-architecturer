@@ -1,52 +1,52 @@
 # AGENTS.md
 
-## Build & Development Commands
+## Build ve Geliştirme Komutları
 
 ```bash
 npm run build          # TypeScript + frontend build
-npm run dev            # Dev mode with tsx
-npm test               # Run tests (vitest)
-npm run test:watch     # Watch mode tests
+npm run dev            # Geliştirme modu (tsx)
+npm test               # Testleri çalıştır (vitest)
+npm run test:watch     # İzleme modunda test
 npm run lint           # ESLint src/**/*.ts
-cd frontend && npm run build   # Build frontend only
+cd frontend && npm run build   # Sadece frontend build
 ```
 
-## Architecture
+## Mimari
 
-- **ESM modules** throughout (`"type": "module"`)
-- **TypeScript 5.4+** with strict mode, ES2022 target, bundler resolution
-- **CLI** (Commander.js) → **Scanner** (orchestrator) → **32+ parsers** → **DependencyGraph**
-- Three interfaces: CLI (`arch-viz`), Web Dashboard (React + Express), MCP Server (stdio/HTTP)
-- `PathResolver` abstracts all filesystem operations for testability
-- Frontend builds to `dist/public/` and served statically by Express
+- **ESM modülleri** (`"type": "module"`)
+- **TypeScript 5.4+** sıkı mod, ES2022 hedef, bundler çözümleme
+- **CLI** (Commander.js) → **Scanner** (orkestratör) → **32+ parser** → **DependencyGraph**
+- Üç arayüz: CLI (`arch-viz`), Web Dashboard (React + Express), MCP Sunucusu (stdio/HTTP)
+- `PathResolver` tüm dosya sistemi işlemlerini test edilebilirlik için soyutlar
+- Frontend `dist/public/` dizinine build edilir ve Express tarafından statik olarak sunulur
 
-## Code Style
+## Kod Stili
 
-- No comments unless requested
-- ESM imports with `.js` extension (e.g. `import { X } from './foo.js'`)
-- Zod for schema validation
-- Class-based parsers with `parse()` method
-- Typed dependency edges: `depends`, `builds`, `network`, `connects`, `volume`, `routes`
+- İstenmedikçe yorum ekleme
+- ESM import'larında `.js` uzantısı kullan (ör. `import { X } from './foo.js'`)
+- Şema doğrulama için Zod
+- `parse()` methodlu sınıf tabanlı parser'lar
+- Tipli bağımlılık kenarları: `depends`, `builds`, `network`, `connects`, `volume`, `routes`
 
-## Project Structure
+## Proje Yapısı
 
 ```
 src/
-├── cli.ts                    # CLI entry point (5 commands: analyze, serve, mcp, review, time-travel)
-├── core/                     # Core modules
-│   ├── scanner.ts            # Central orchestrator
-│   ├── path-resolver.ts      # Filesystem abstraction
-│   ├── docker-scanner.ts     # Docker config detection
-│   ├── circular-detector.ts  # Circular dependency detection
-│   ├── docker-auditor.ts     # Docker security audit
-│   ├── env-analyzer.ts       # Environment variable analysis
-│   ├── git-history-scanner.ts # Git history time travel
-│   ├── gateway-detector.ts   # API gateway detection
-│   ├── dataflow-analyzer.ts  # DataFlow bottleneck analysis
-│   ├── build-edge-generator.ts # CI build edge generation
-│   ├── routes-edge-generator.ts # Proxy routes edge generation
+├── cli.ts                    # CLI giriş noktası (5 komut: analyze, serve, mcp, review, time-travel)
+├── core/                     # Çekirdek modüller
+│   ├── scanner.ts            # Merkez orkestratör
+│   ├── path-resolver.ts      # Dosya sistemi soyutlama
+│   ├── docker-scanner.ts     # Docker konfigürasyon tespiti
+│   ├── circular-detector.ts  # Döngüsel bağımlılık tespiti
+│   ├── docker-auditor.ts     # Docker güvenlik denetimi
+│   ├── env-analyzer.ts       # Ortam değişkeni analizi
+│   ├── git-history-scanner.ts # Git geçmişi tarama
+│   ├── gateway-detector.ts   # API gateway tespiti
+│   ├── dataflow-analyzer.ts  # DataFlow darboğaz analizi
+│   ├── build-edge-generator.ts # CI build kenar üretimi
+│   ├── routes-edge-generator.ts # Proxy routes kenar üretimi
 │   └── security-boundary-analyzer.ts
-├── parsers/                  # 32+ config parsers
+├── parsers/                  # 32+ config parser
 │   ├── workspace-parser.ts   # pnpm-workspace.yaml
 │   ├── package-parser.ts     # package.json
 │   ├── docker-compose-parser.ts
@@ -57,27 +57,27 @@ src/
 │   ├── github-actions-parser.ts, gitlab-ci-parser.ts, jenkins-parser.ts, circleci-parser.ts
 │   ├── composer-parser.ts, python-parser.ts
 │   └── ... (ai-model, hardware, dataflow, proxy, db-schema, env, ci-cd, dependency)
-├── mcp/                      # MCP server (39 tools)
-├── server/                   # Express API (17+ REST endpoints)
-├── ai/                       # LLM review engine (Ollama/OpenRouter/LMStudio)
-├── types/                    # TypeScript type definitions
-└── utils/                    # Utility functions
+├── mcp/                      # MCP sunucu (39 tool)
+├── server/                   # Express API (17+ REST endpoint)
+├── ai/                       # LLM inceleme motoru (Ollama/OpenRouter/LMStudio)
+├── types/                    # TypeScript tip tanımları
+└── utils/                    # Yardımcı fonksiyonlar
 frontend/                     # React 18 + Vite 5 + @xyflow/react + dagre
-tests/                        # Vitest test suite
+tests/                        # Vitest test süiti
 ```
 
-## Testing
+## Test
 
-- **Framework:** Vitest with globals (`describe`, `it`, `expect` available without import)
-- **Location:** `tests/` directory, files named `*.test.ts`
-- **Pattern:** Create temp dirs in `beforeEach`, clean in `afterEach` with `fs.rm({ recursive: true, force: true })`
-- Mock filesystem for parser tests using `os.tmpdir()` + `fs.mkdtemp()`
-- Coverage threshold: 80% statements/branches/functions/lines
+- **Çerçeve:** Vitest, global'lerle (`describe`, `it`, `expect` import olmadan kullanılabilir)
+- **Konum:** `tests/` dizini, dosyalar `*.test.ts` adlandırılmış
+- **Örüntü:** `beforeEach` ile geçici dizin oluştur, `afterEach` ile `fs.rm({ recursive: true, force: true })` ile temizle
+- Parser testleri için `os.tmpdir()` + `fs.mkdtemp()` ile dosya sistemi mock'la
+- Kapsam eşiği: %80 statements/branches/functions/lines
 
-## Key Patterns
+## Anahtar Örüntüler
 
-- **Strategy pattern** for 32+ pluggable parsers
-- **DependencyGraph** with typed nodes (package, service, hardware, database, gateway) and typed edges
-- **Scanner** coordinates all parsers into unified `ProjectStructure`
-- **MCP dual transport:** stdio for CLI integration, HTTP for remote access
-- **PathResolver** wraps all file operations — never use `fs` directly in parsers
+- 32+ takılabilir parser için **strateji kalıbı**
+- Tipli node'lar (package, service, hardware, database, gateway) ve tipli kenarlar ile **DependencyGraph**
+- **Scanner** tüm parser'ları birleşik `ProjectStructure` halinde orkestra eder
+- **MCP çift transport:** CLI entegrasyonu için stdio, uzan erişim için HTTP
+- **PathResolver** tüm dosya işlemlerini sarar — parser'larda asla `fs` kullanma

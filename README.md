@@ -6,26 +6,26 @@
 
 Geliştiricilerin terminal üzerinden kendi projelerinin kök dizininde çalıştırabileceği; pnpm monorepo yapılarını ve Docker konfigürasyonlarını otomatik analiz eden bir Node.js CLI aracı ve MCP (Model Context Protocol) sunucusu.
 
-## Features
+## Özellikler
 
-- **Monorepo Analysis**: pnpm workspace yapısını otomatik tespit eder
-- **Docker Analysis**: docker-compose.yml dosyalarını parse eder
-- **Dependency Graph**: Paketler ve servisler arasındaki bağımlılıkları görselleştirir
-- **MCP Server**: AI asistanları için 39 tool sunar
+- **Monorepo Analizi**: pnpm workspace yapısını otomatik tespit eder
+- **Docker Analizi**: docker-compose.yml dosyalarını parse eder
+- **Bağımlılık Grafiği**: Paketler ve servisler arasındaki bağımlılıkları görselleştirir
+- **MCP Sunucusu**: AI asistanları için 39 tool sunar
 - **Web Dashboard**: React Flow ile interaktif grafik görünümü
-- **Port Conflict Detection**: Docker servislerindeki port çakışmalarını tespit eder
-- **CI/CD Pipeline Analysis**: GitHub Actions, GitLab CI, Jenkins, CircleCI yapılandırmalarını parse eder
-- **Git History Time Travel**: Mimari evrimi commit geçmişinden analiz eder
-- **AI Architecture Review**: LLM ile otomatik mimari inceleme ve öneriler
-- **Database Schema Parsing**: Prisma, TypeORM, Drizzle, Sequelize, SQLAlchemy desteği
-- **Proxy Configuration**: Traefik, Nginx, Caddy reverse proxy analizi
-- **Gateway Detection**: API gateway ve reverse proxy tespiti
-- **Security Audit**: Docker güvenlik denetimi ve volume analizi
-- **Environment Coverage**: .env dosyaları ile kaynak kod arasındaki env değişken eşleşmesi
-- **AI Model Profiling**: AI model VRAM gereksinimleri hesaplama
-- **Hardware Detection**: Serial, USB, GPIO cihaz tespiti
+- **Port Çakışma Tespiti**: Docker servislerindeki port çakışmalarını tespit eder
+- **CI/CD Pipeline Analizi**: GitHub Actions, GitLab CI, Jenkins, CircleCI yapılandırmalarını parse eder
+- **Git Geçmiş Zaman Yolculuğu**: Mimari evrimi commit geçmişinden analiz eder
+- **AI Mimari İnceleme**: LLM ile otomatik mimari inceleme ve öneriler
+- **Veritabanı Şema Analizi**: Prisma, TypeORM, Drizzle, Sequelize, SQLAlchemy desteği
+- **Proxy Yapılandırması**: Traefik, Nginx, Caddy reverse proxy analizi
+- **Gateway Tespiti**: API gateway ve reverse proxy tespiti
+- **Güvenlik Denetimi**: Docker güvenlik denetimi ve volume analizi
+- **Ortam Değişkeni Kapsamı**: .env dosyaları ile kaynak kod arasındaki env değişken eşleşmesi
+- **AI Model Profilleme**: AI model VRAM gereksinimleri hesaplama
+- **Donanım Tespiti**: Serial, USB, GPIO cihaz tespiti
 
-## Installation
+## Kurulum
 
 ```bash
 # npm ile
@@ -35,7 +35,7 @@ npm install -g local-architecturer
 npx local-architecturer analyze -p /path/to/project
 ```
 
-## Usage
+## Kullanım
 
 ### Proje Analizi
 
@@ -43,7 +43,7 @@ npx local-architecturer analyze -p /path/to/project
 # JSON çıktısı
 arch-viz analyze -p /path/to/project -f json
 
-# Text çıktısı
+# Metin çıktısı
 arch-viz analyze -p /path/to/project -f text
 ```
 
@@ -57,7 +57,7 @@ arch-viz serve -p /path/to/project
 arch-viz serve -p . -port 3000
 ```
 
-### MCP Server (AI Asistanları İçin)
+### MCP Sunucusu (AI Asistanları İçin)
 
 ```bash
 # MCP sunucusunu başlat
@@ -67,7 +67,7 @@ arch-viz mcp -p /path/to/project
 arch-viz mcp -p . -t http -port 3001
 ```
 
-### AI Architecture Review
+### AI Mimari İnceleme
 
 ```bash
 # Ollama ile
@@ -77,17 +77,17 @@ arch-viz review -p /path/to/project --provider ollama --model qwen2.5
 arch-viz review -p /path/to/project --provider openrouter --model meta-llama/llama-3-8b --api-key YOUR_KEY
 ```
 
-### Git History Time Travel
+### Git Geçmiş Zaman Yolculuğu
 
 ```bash
 # Son 50 commit'i analiz et
 arch-viz time-travel -p /path/to/project -c 50
 ```
 
-## API Endpoints
+## API Endpoint'leri
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
+| Endpoint | Yöntem | Açıklama |
+|----------|--------|----------|
 | `/api/health` | GET | Sağlık kontrolü |
 | `/api/graph` | GET | Bağımlılık grafiği |
 | `/api/packages` | GET | Workspace paketleri |
@@ -105,11 +105,11 @@ arch-viz time-travel -p /path/to/project -c 50
 | `/api/dataflow` | GET | Data flow pipeline'ları |
 | `/api/security-boundaries` | GET | Güvenlik sınırları |
 
-## MCP Tools (39 Tool)
+## MCP Araçları (39 Tool)
 
-### Core Analysis
-| Tool | Description |
-|------|-------------|
+### Çekirdek Analiz
+| Araç | Açıklama |
+|------|----------|
 | `analyze_project` | Tam proje analizi |
 | `get_packages` | Workspace paketlerini getir |
 | `get_monorepo_graph` | Monorepo grafiği (JSON + Mermaid) |
@@ -120,62 +120,61 @@ arch-viz time-travel -p /path/to/project -c 50
 | `detect_circular_dependencies` | Döngüsel bağımlılık tespiti |
 
 ### Docker
-| Tool | Description |
-|------|-------------|
+| Araç | Açıklama |
+|------|----------|
 | `get_docker_services` | Docker servisleri (port conflict analizi) |
 | `analyze_dockerfile` | Dockerfile analizi |
 | `audit_docker_security` | Docker güvenlik denetimi |
 | `parse_docker_compose_file` | Tek Docker Compose dosyası analizi |
 | `detect_port_conflicts` | Port çakışması tespiti |
 
-### Database & Proxy
-| Tool | Description |
-|------|-------------|
+### Veritabanı ve Proxy
+| Araç | Açıklama |
+|------|----------|
 | `get_database_schemas` | Veritabanı şemaları (Prisma/TypeORM/Drizzle/Sequelize/SQLAlchemy) |
 | `get_proxy_configurations` | Reverse proxy yapılandırmaları |
 | `parse_nginx_config` | Nginx konfigürasyon parse |
 | `detect_gateways` | API gateway tespiti |
 | `get_routes_edges` | Proxy routing bağımlılık kenarları |
 
-### CI/CD & Git
-| Tool | Description |
-|------|-------------|
+### CI/CD ve Git
+| Araç | Açıklama |
+|------|----------|
 | `get_ci_cd_pipelines` | CI/CD pipeline'ları |
 | `get_build_edges` | CI build bağımlılık kenarları |
 | `time_travel` | Git geçmişi ile mimari evrim |
 
-### Environment & Security
-| Tool | Description |
-|------|-------------|
+### Ortam ve Güvenlik
+| Araç | Açıklama |
+|------|----------|
 | `get_env_coverage` | Env değişken eşleşmesi |
 | `analyze_env_file` | Tek .env dosyası analizi |
 | `get_security_boundaries` | Güvenlik sınırları |
 
-### AI & Hardware
-| Tool | Description |
-|------|-------------|
+### AI ve Donanım
+| Araç | Açıklama |
+|------|----------|
 | `review_architecture` | AI destekli mimari inceleme |
 | `get_ai_profile` | AI model profili |
 | `lookup_ai_model` | AI model VRAM gereksinimleri |
-| `get_hardware_devices` | Hardware cihaz tespiti |
+| `get_hardware_devices` | Donanım cihaz tespiti |
 
-### Data Flow & Visualization
-| Tool | Description |
-|------|-------------|
+### Veri Akışı ve Görselleştirme
+| Araç | Açıklama |
+|------|----------|
 | `get_data_flows` | Data flow pipeline'ları |
 | `analyze_dataflow_bottlenecks` | DataFlow darboğaz analizi |
 | `get_mermaid_diagram` | Mermaid diyagram üretimi |
 
-### Language Support
-| Tool | Description |
-|------|-------------|
+| Araç | Açıklama |
+|------|----------|
 | `parse_python_dependencies` | Python bağımlılık parse |
 | `parse_composer_packages` | PHP/Composer bağımlılık parse |
 | `parse_workspace_config` | Monorepo workspace tespiti |
 | `parse_sequelize_models` | Sequelize ORM model parse |
 | `parse_sqlalchemy_models` | SQLAlchemy ORM model parse |
 
-## Example Output
+## Örnek Çıktı
 
 ```json
 {
@@ -191,7 +190,7 @@ arch-viz time-travel -p /path/to/project -c 50
 }
 ```
 
-## Development
+## Geliştirme
 
 ```bash
 # Bağımlılıkları kur
@@ -209,7 +208,7 @@ npm run build
 cd frontend && npm run build
 ```
 
-## Project Structure
+## Proje Yapısı
 
 ```
 local-architecturer/
@@ -249,6 +248,6 @@ local-architecturer/
 └── dist/                         # Build çıktıları
 ```
 
-## License
+## Lisans
 
 MIT

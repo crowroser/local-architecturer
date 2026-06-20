@@ -1,4 +1,4 @@
-# MCP Server
+# MCP Sunucusu
 
 Model Context Protocol (MCP) sunucusu, AI asistanlarının (Cursor, Windsurf vb.) projenizi analiz etmesini sağlar. 39 tool ile kapsamlı proje analizi sunar.
 
@@ -11,9 +11,9 @@ arch-viz mcp -p /path/to/project
 arch-viz mcp -p . -t http -port 3001
 ```
 
-## Tools
+## Araçlar
 
-### Core Analysis
+### Çekirdek Analiz
 
 #### analyze_project
 
@@ -23,7 +23,7 @@ Tam proje analizi yapar.
 {
   "name": "analyze_project",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -36,7 +36,7 @@ Workspace paketlerini getirir.
 {
   "name": "get_packages",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -50,7 +50,7 @@ Monorepo bağımlılık grafiğini JSON veya Mermaid formatında getirir.
   "name": "get_monorepo_graph",
   "arguments": {
     "format": "both",
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -64,7 +64,7 @@ Bağımlılık grafiğini filtrelenmiş olarak getirir.
   "name": "get_dependency_graph",
   "arguments": {
     "type": "all",
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -78,7 +78,7 @@ Belirli bir node'un detaylarını getirir.
   "name": "get_node_details",
   "arguments": {
     "nodeId": "@app/core",
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -91,7 +91,7 @@ Proje sağlık skorunu hesaplar.
 {
   "name": "get_health_score",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -105,7 +105,7 @@ Paketleri ada göre arar.
   "name": "search_packages",
   "arguments": {
     "query": "core",
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -118,7 +118,7 @@ Döngüsel bağımlılıkları tespit eder.
 {
   "name": "detect_circular_dependencies",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -134,7 +134,7 @@ Docker servislerini port conflict ve volume analizi ile getirir.
   "name": "get_docker_services",
   "arguments": {
     "includeAnalysis": true,
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -148,7 +148,7 @@ Tek bir Dockerfile'ı analiz eder.
   "name": "analyze_dockerfile",
   "arguments": {
     "path": "Dockerfile",
-    "projectPath": "/optional/project/path"
+    "projectPath": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -161,7 +161,7 @@ Docker servislerini güvenlik açısından denetler.
 {
   "name": "audit_docker_security",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -175,7 +175,7 @@ Tek bir Docker Compose dosyasını analiz eder.
   "name": "parse_docker_compose_file",
   "arguments": {
     "filePath": "docker-compose.yml",
-    "projectPath": "/optional/project/path"
+    "projectPath": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -188,12 +188,12 @@ Port çakışmalarını tespit eder.
 {
   "name": "detect_port_conflicts",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
 
-### Database & Proxy
+### Veritabanı ve Proxy
 
 #### get_database_schemas
 
@@ -203,7 +203,7 @@ Veritabanı şemalarını parse eder (Prisma, TypeORM, Drizzle, Sequelize, SQLAl
 {
   "name": "get_database_schemas",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -216,7 +216,7 @@ Reverse proxy yapılandırmalarını getirir (Traefik, Nginx, Caddy).
 {
   "name": "get_proxy_configurations",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -229,7 +229,7 @@ Nginx konfigürasyon dosyalarını parse eder.
 {
   "name": "parse_nginx_config",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -242,7 +242,7 @@ API gateway ve reverse proxy'leri tespit eder.
 {
   "name": "detect_gateways",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -255,12 +255,12 @@ Proxy routing bağımlılık kenarlarını üretir.
 {
   "name": "get_routes_edges",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
 
-### CI/CD & Git
+### CI/CD ve Git
 
 #### get_ci_cd_pipelines
 
@@ -270,7 +270,7 @@ CI/CD pipeline yapılandırmalarını getirir.
 {
   "name": "get_ci_cd_pipelines",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -283,7 +283,7 @@ CI build bağımlılık kenarlarını üretir.
 {
   "name": "get_build_edges",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -297,12 +297,12 @@ Git geçmişinden mimari evrimi analiz eder.
   "name": "time_travel",
   "arguments": {
     "commits": 100,
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
 
-### Environment & Security
+### Ortam ve Güvenlik
 
 #### get_env_coverage
 
@@ -312,7 +312,7 @@ Env değişken eşleşmesini analiz eder.
 {
   "name": "get_env_coverage",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -326,7 +326,7 @@ Tek bir .env dosyasını parse eder.
   "name": "analyze_env_file",
   "arguments": {
     "filePath": ".env",
-    "projectPath": "/optional/project/path"
+    "projectPath": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -339,12 +339,12 @@ Güvenlik sınırlarını analiz eder.
 {
   "name": "get_security_boundaries",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
 
-### AI & Hardware
+### AI ve Donanım
 
 #### review_architecture
 
@@ -357,8 +357,8 @@ AI ile mimari inceleme yapar.
     "provider": "ollama",
     "model": "qwen2.5",
     "baseUrl": "http://localhost:11434",
-    "apiKey": "optional-key",
-    "path": "/optional/project/path"
+    "apiKey": "isteğe bağlı-anahtar",
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -371,7 +371,7 @@ AI model profili ve VRAM gereksinimlerini getirir.
 {
   "name": "get_ai_profile",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -402,18 +402,18 @@ veya parametre sayısından tahmin:
 
 #### get_hardware_devices
 
-Hardware cihazları tespit eder.
+Donanım cihazları tespit eder.
 
 ```json
 {
   "name": "get_hardware_devices",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
 
-### Data Flow & Visualization
+### Veri Akışı ve Görselleştirme
 
 #### get_data_flows
 
@@ -423,7 +423,7 @@ Data flow pipeline'larını getirir.
 {
   "name": "get_data_flows",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -436,7 +436,7 @@ DataFlow darboğazlarını analiz eder.
 {
   "name": "analyze_dataflow_bottlenecks",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -450,12 +450,12 @@ Mermaid diyagram üretir.
   "name": "get_mermaid_diagram",
   "arguments": {
     "variant": "subgraph",
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
 
-### Language Support
+### Dil Desteği
 
 #### parse_python_dependencies
 
@@ -466,7 +466,7 @@ Python bağımlılıklarını parse eder.
   "name": "parse_python_dependencies",
   "arguments": {
     "file": "requirements.txt",
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -479,7 +479,7 @@ PHP/Composer bağımlılıklarını parse eder.
 {
   "name": "parse_composer_packages",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -492,7 +492,7 @@ Monorepo workspace yapılandırmasını tespit eder.
 {
   "name": "parse_workspace_config",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -505,7 +505,7 @@ Sequelize ORM model dosyalarını parse eder.
 {
   "name": "parse_sequelize_models",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -518,7 +518,7 @@ SQLAlchemy ORM model dosyalarını parse eder.
 {
   "name": "parse_sqlalchemy_models",
   "arguments": {
-    "path": "/optional/project/path"
+    "path": "/isteğe bağlı/proje/yolu"
   }
 }
 ```
@@ -527,23 +527,23 @@ SQLAlchemy ORM model dosyalarını parse eder.
 
 ### Cursor
 
-1. Settings > MCP Servers bölümüne gidin
+1. Ayarlar > MCP Sunucuları bölümüne gidin
 2. Yeni sunucu ekleyin:
    ```json
    {
      "name": "local-architecturer",
      "command": "arch-viz",
-     "args": ["mcp", "-p", "/path/to/your/project"]
+     "args": ["mcp", "-p", "/projenizin/yolu"]
    }
    ```
 
 ### Windsurf
 
-1. Settings > MCP Servers bölümüne gidin
+1. Ayarlar > MCP Sunucuları bölümüne gidin
 2. Yeni sunucu ekleyin:
    ```json
    {
      "name": "local-architecturer",
-     "command": "arch-viz mcp -p /path/to/your/project"
+     "command": "arch-viz mcp -p /projenizin/yolu"
    }
    ```

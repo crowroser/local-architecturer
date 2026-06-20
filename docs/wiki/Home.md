@@ -1,35 +1,35 @@
-# Home
+# Ana Sayfa
 
 **Local Architecture Analyzer** - Geliştiricilerin projelerinin mimari yapısını analiz etmesi için geliştirilmiş bir CLI aracı ve MCP sunucusu.
 
-## Quick Links
+## Hızlı Bağlantılar
 
-- [Getting Started](Getting-Started)
-- [CLI Commands](CLI-Commands)
-- [MCP Server](MCP-Server)
-- [API Reference](API-Reference)
+- [Başlangıç](Getting-Started)
+- [CLI Komutları](CLI-Commands)
+- [MCP Sunucusu](MCP-Server)
+- [API Referansı](API-Reference)
 - [Web Dashboard](Web-Dashboard)
-- [Development](Development)
+- [Geliştirme](Development)
 
-## Features
+## Özellikler
 
 - Monorepo (pnpm workspace) analizi
 - Docker Compose parsing ve güvenlik denetimi
-- Dependency graph görselleştirmesi
-- MCP Server — 39 tool ile AI asistanları için
+- Bağımlılık grafiği görselleştirmesi
+- MCP Sunucusu — 39 tool ile AI asistanları için
 - React Flow ile interaktif dashboard
-- Port conflict detection
+- Port çakışma tespiti
 - CI/CD pipeline analizi (GitHub Actions, GitLab CI, Jenkins, CircleCI)
-- Git history time travel — mimari evrim analizi
-- AI architecture review — LLM ile otomatik inceleme
-- Database schema parsing (Prisma, TypeORM, Drizzle, Sequelize, SQLAlchemy)
+- Git geçmiş zaman yolculuğu — mimari evrim analizi
+- AI mimari inceleme — LLM ile otomatik inceleme
+- Veritabanı şema parsing (Prisma, TypeORM, Drizzle, Sequelize, SQLAlchemy)
 - Reverse proxy analizi (Traefik, Nginx, Caddy)
 - API gateway tespiti
-- Environment variable coverage analizi
+- Ortam değişkeni kapsam analizi
 - AI model VRAM gereksinimleri hesaplama
-- Hardware cihaz tespiti (Serial, USB, GPIO)
+- Donanım cihaz tespiti (Serial, USB, GPIO)
 
-## Quick Start
+## Hızlı Başlangıç
 
 ```bash
 # Kurulum
@@ -41,9 +41,9 @@ arch-viz analyze -p /path/to/project
 # Web dashboard
 arch-viz serve -p /path/to/project
 
-# MCP server (AI asistanları için)
+# MCP sunucusu (AI asistanları için)
 arch-viz mcp -p /path/to/project
 
-# AI architecture review
+# AI mimari inceleme
 arch-viz review -p /path/to/project --provider ollama --model qwen2.5
 ```

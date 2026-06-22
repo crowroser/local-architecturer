@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import yaml from 'js-yaml';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
@@ -135,7 +134,8 @@ export class KubernetesParser {
 
   private parseFile(filePath: string): KubernetesResource[] | null {
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const relativePath = this.resolver.getRelativePath(filePath);
+      const content = this.resolver.readFileSync(relativePath);
       const documents = yaml.loadAll(content) as Array<Record<string, unknown>>;
       const resources: KubernetesResource[] = [];
 

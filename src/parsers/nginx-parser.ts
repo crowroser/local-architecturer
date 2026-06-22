@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
 import type { ProxyConfig, ProxyRoute } from '../types/proxy.js';
@@ -43,7 +42,7 @@ export class NginxParser {
 
   private parseFile(filePath: string): ProxyConfig | null {
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = this.resolver.readFileSync(this.resolver.getRelativePath(filePath));
       const routes = this.parseNginxConfig(content);
 
       if (routes.length === 0) return null;

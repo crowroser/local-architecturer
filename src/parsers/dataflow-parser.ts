@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import yaml from 'js-yaml';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
@@ -42,11 +41,10 @@ export class DataFlowParser {
     const configFiles = ['dataflow.yaml', 'dataflow.yml', '.dataflow.yaml'];
 
     for (const file of configFiles) {
-      const filePath = this.resolver.getRootDir() + '/' + file;
-      if (!fs.existsSync(filePath)) continue;
+      if (!this.resolver.fileExistsSync(file)) continue;
 
       try {
-        const content = fs.readFileSync(filePath, 'utf-8');
+        const content = this.resolver.readFileSync(file);
         const config = yaml.load(content) as Record<string, unknown>;
 
         if (!config || typeof config !== 'object') continue;

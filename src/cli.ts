@@ -5,13 +5,14 @@ import { serveCommand } from './commands/serve.js';
 import { mcpCommand } from './commands/mcp.js';
 import { reviewCommand } from './commands/review.js';
 import { timeTravelCommand } from './commands/time-travel.js';
+import { getVersion } from './utils/version.js';
 
 const program = new Command();
 
 program
   .name('arch-viz')
   .description('Local architecture analyzer for pnpm monorepos and Docker configs')
-  .version('0.4.0');
+  .version(getVersion());
 
 program.addCommand(analyzeCommand);
 program.addCommand(serveCommand);

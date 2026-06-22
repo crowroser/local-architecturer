@@ -36,16 +36,10 @@ export class TraefikParser {
     const files2 = this.resolver.findFilesSync('**/traefik.yaml');
 
     for (const file of [...files, ...files2]) {
-      const config = this.parseTraefikFile(file);
-      if (config) configs.push(config);
+      void file;
     }
 
     return configs;
-  }
-
-  private parseTraefikFile(filePath: string): ProxyConfig | null {
-    void filePath;
-    return null;
   }
 
   private extractRoutes(service: DockerService): ProxyRoute[] {

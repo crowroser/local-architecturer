@@ -5,7 +5,7 @@ export class MermaidBuilder {
     const lines: string[] = ['graph TD'];
     
     for (const node of graph.nodes) {
-      const shape = node.type === 'package' ? '([{}])' : '[[{}]]';
+      const shape = this.getNodeShape(node);
       const label = node.name.replace(/["']/g, '');
       lines.push(`  ${this.sanitizeId(node.id)}${shape.replace('{}', label)}`);
     }
@@ -26,17 +26,27 @@ export class MermaidBuilder {
     const packageNodes = graph.nodes.filter(n => n.type === 'package');
     const serviceNodes = graph.nodes.filter(n => n.type === 'service');
     
-    if (packageNodes.length > 0) {
-      lines.push('  subgraph packages');
-      for (const node of packageNodes) {
+    const nodeGroups = new Map<string, typeof packageNodes>();
+    for (const node of packageNodes) {
+      const lang = (node.metadata?.language as string) || 'javascript';
+      if (!nodeGroups.has(lang)) {
+        nodeGroups.set(lang, []);
+      }
+      nodeGroups.get(lang)!.push(node);
+    }
+    
+    for (const [lang, nodes] of nodeGroups) {
+      lines.push(`  subgraph ${lang}_packages`);
+      for (const node of nodes) {
         const label = node.name.replace(/["']/g, '');
-        lines.push(`    ${this.sanitizeId(node.id)}([${label}])`);
+        const shape = this.getNodeShape(node);
+        lines.push(`    ${this.sanitizeId(node.id)}${shape.replace('{}', label)}`);
       }
       lines.push('  end');
     }
     
     if (serviceNodes.length > 0) {
-      lines.push('  subgraph services');
+      lines.push('  subgraph docker_services');
       for (const node of serviceNodes) {
         const label = node.name.replace(/["']/g, '');
         lines.push(`    ${this.sanitizeId(node.id)}[[${label}]]`);
@@ -52,6 +62,17 @@ export class MermaidBuilder {
     }
     
     return lines.join('\n');
+  }
+
+  private static getNodeShape(node: { type: string; metadata?: Record<string, unknown> }): string {
+    if (node.type === 'service') return '[[{}]]';
+    
+    const language = node.metadata?.language as string;
+    switch (language) {
+      case 'php': return '([{}}])';
+      case 'python': return '>{{}}>';
+      default: return '([{}])';
+    }
   }
 
   private static getEdgeArrow(type: string): string {

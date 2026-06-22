@@ -2,11 +2,12 @@ import { Command } from 'commander';
 import { ExpressServer } from '../server/express-server.js';
 import { openBrowser } from '../utils/browser-opener.js';
 import { Logger } from '../utils/logger.js';
+import { getConfig } from '../config.js';
 
 export const serveCommand = new Command('serve')
   .description('Start visualization server')
   .option('-p, --path <path>', 'Project root path', process.cwd())
-  .option('-port, --port <port>', 'Server port', '4000')
+  .option('-port, --port <port>', 'Server port', String(getConfig().defaultPort))
   .option('-o, --open', 'Open browser automatically', true)
   .action(async (options) => {
     const logger = new Logger();

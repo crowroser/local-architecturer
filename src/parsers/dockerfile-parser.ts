@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import { PathResolver } from '../core/path-resolver.js';
 
 export interface DockerfileInfo {
@@ -25,11 +24,12 @@ export class DockerfileParser {
 
   parse(dockerfilePath: string): DockerfileInfo | null {
     try {
-      const absolutePath = this.resolver.resolveFilePathSync(dockerfilePath);
-      const content = fs.readFileSync(absolutePath, 'utf-8');
+      const content = this.resolver.readFileSync(dockerfilePath);
       
       return this.parseContent(content, dockerfilePath);
-    } catch {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes('File not found')) return null;
       return null;
     }
   }

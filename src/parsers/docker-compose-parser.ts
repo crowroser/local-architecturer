@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
 import { PathResolver } from '../core/path-resolver.js';
@@ -20,14 +19,12 @@ export class DockerComposeParser {
   }
 
   parse(filePath: string): ParsedDockerCompose | null {
-    const absolutePath = path.join(this.resolver.getRootDir(), filePath);
-
-    if (!fs.existsSync(absolutePath)) {
+    if (!this.resolver.fileExistsSync(filePath)) {
       this.logger.warn(`File not found: ${filePath}`);
       return null;
     }
 
-    const content = fs.readFileSync(absolutePath, 'utf-8');
+    const content = this.resolver.readFileSync(filePath);
     
     let config: { services?: Record<string, unknown>; networks?: Record<string, unknown> };
     try {
@@ -62,6 +59,7 @@ export class DockerComposeParser {
         dependsOn: this.parseDependsOn(service.depends_on),
         networks: this.parseNetworks(service.networks),
         environment: this.parseEnvironment(service.environment),
+        devices: this.parseDevices(service.devices),
       };
     });
   }
@@ -114,6 +112,11 @@ export class DockerComposeParser {
     }
 
     return [];
+  }
+
+  private parseDevices(devices: unknown): string[] {
+    if (!Array.isArray(devices)) return [];
+    return devices.map(d => String(d));
   }
 
   private parseEnvironment(env: unknown): Record<string, string> {

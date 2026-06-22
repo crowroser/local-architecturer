@@ -54,7 +54,10 @@ export class PathResolver {
       const absolutePath = path.resolve(this.rootDir, relativePath);
       await fsAsync.access(absolutePath);
       return true;
-    } catch {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return false;
+      }
       return false;
     }
   }
@@ -62,6 +65,11 @@ export class PathResolver {
   async readFile(relativePath: string): Promise<string> {
     const absolutePath = path.resolve(this.rootDir, relativePath);
     return fsAsync.readFile(absolutePath, 'utf-8');
+  }
+
+  readFileSync(relativePath: string): string {
+    const absolutePath = path.resolve(this.rootDir, relativePath);
+    return fs.readFileSync(absolutePath, 'utf-8');
   }
 
   async readJson(relativePath: string): Promise<unknown> {

@@ -1,4 +1,5 @@
 import type { Node, Edge } from '@xyflow/react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface NodeData {
   label: string;
@@ -17,6 +18,7 @@ interface DetailPanelProps {
 }
 
 export default function DetailPanel({ node, edges, onClose }: DetailPanelProps) {
+  const { colors } = useTheme();
   if (!node) return null;
 
   const data = node.data as unknown as NodeData;
@@ -44,14 +46,14 @@ export default function DetailPanel({ node, edges, onClose }: DetailPanelProps) 
       width: '300px',
       maxHeight: 'calc(100vh - 20px)',
       overflowY: 'auto',
-      background: 'white',
+      background: colors.surface,
       borderRadius: '8px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+      boxShadow: `0 2px 8px ${colors.shadow}`,
       zIndex: 20,
     }}>
       <div style={{
         padding: '16px',
-        borderBottom: '1px solid #eee',
+        borderBottom: `1px solid ${colors.border}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -75,7 +77,7 @@ export default function DetailPanel({ node, edges, onClose }: DetailPanelProps) 
 
       <div style={{ padding: '16px' }}>
         <div style={{ marginBottom: '16px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#666' }}>Details</h4>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: colors.textSecondary }}>Details</h4>
           <div style={{ fontSize: '13px' }}>
             <div><strong>Type:</strong> {node.type}</div>
             {data.version && <div><strong>Version:</strong> {data.version}</div>}
@@ -95,7 +97,7 @@ export default function DetailPanel({ node, edges, onClose }: DetailPanelProps) 
 
         {node.type === 'package' && (
           <div style={{ marginBottom: '16px' }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#666' }}>Dependencies</h4>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: colors.textSecondary }}>Dependencies</h4>
             <div style={{ fontSize: '13px' }}>
               {data.dependencies && data.dependencies.length > 0 ? (
                 <ul style={{ margin: 0, paddingLeft: '20px' }}>
@@ -111,7 +113,7 @@ export default function DetailPanel({ node, edges, onClose }: DetailPanelProps) 
         )}
 
         <div>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#666' }}>Connections</h4>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: colors.textSecondary }}>Connections</h4>
           <div style={{ fontSize: '13px' }}>
             {incomingEdges.length > 0 && (
               <div style={{ marginBottom: '8px' }}>

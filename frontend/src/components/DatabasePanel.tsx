@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface DBColumn {
   name: string;
@@ -33,6 +34,7 @@ interface DatabasePanelProps {
 }
 
 export default function DatabasePanel({ isOpen, onClose }: DatabasePanelProps) {
+  const { colors } = useTheme();
   const [schemas, setSchemas] = useState<DatabaseSchema[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTable, setSelectedTable] = useState<DBTable | null>(null);
@@ -74,14 +76,14 @@ export default function DatabasePanel({ isOpen, onClose }: DatabasePanelProps) {
       width: '320px',
       maxHeight: 'calc(100vh - 20px)',
       overflowY: 'auto',
-      background: 'white',
+      background: colors.surface,
       borderRadius: '8px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+      boxShadow: `0 2px 8px ${colors.shadow}`,
       zIndex: 20,
     }}>
       <div style={{
         padding: '16px',
-        borderBottom: '1px solid #eee',
+        borderBottom: `1px solid ${colors.border}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -103,9 +105,9 @@ export default function DatabasePanel({ isOpen, onClose }: DatabasePanelProps) {
 
       <div style={{ padding: '16px' }}>
         {loading ? (
-          <div style={{ color: '#666', fontSize: '13px' }}>Loading schemas...</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Loading schemas...</div>
         ) : schemas.length === 0 ? (
-          <div style={{ color: '#999', fontSize: '13px' }}>No database schemas found</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>No database schemas found</div>
         ) : (
           schemas.map((schema, idx) => (
             <div key={idx} style={{ marginBottom: '16px' }}>
@@ -113,31 +115,31 @@ export default function DatabasePanel({ isOpen, onClose }: DatabasePanelProps) {
                 <span style={{ fontSize: '16px' }}>{platformIcons[schema.platform] || '🗄️'}</span>
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{schema.name}</div>
-                  <div style={{ fontSize: '10px', color: '#666' }}>{schema.platform} • {schema.file}</div>
+                  <div style={{ fontSize: '10px', color: colors.textSecondary }}>{schema.platform} • {schema.file}</div>
                 </div>
               </div>
 
-              <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
+              <div style={{ fontSize: '11px', color: colors.textSecondary, marginBottom: '8px' }}>
                 {schema.tables.length} tables • {schema.relations.length} relations
               </div>
 
               {selectedTable && (
                 <div style={{
                   padding: '8px',
-                  background: '#f9f9f9',
+                  background: colors.surfaceAlt,
                   borderRadius: '4px',
                   marginBottom: '8px',
                 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>
                     {selectedTable.name}
                   </div>
-                  <div style={{ fontSize: '10px', color: '#666' }}>
+                  <div style={{ fontSize: '10px', color: colors.textSecondary }}>
                     {selectedTable.columns.map(col => (
                       <div key={col.name} style={{ marginBottom: '2px' }}>
                         <span style={{ fontWeight: col.isPrimaryKey ? 'bold' : 'normal' }}>
                           {col.name}
                         </span>
-                        {' '}<span style={{ color: '#999' }}>{col.type}</span>
+                        {' '}<span style={{ color: colors.textSecondary }}>{col.type}</span>
                         {col.isPrimaryKey && ' 🔑'}
                         {!col.isNullable && ' *'}
                       </div>
@@ -148,7 +150,7 @@ export default function DatabasePanel({ isOpen, onClose }: DatabasePanelProps) {
                     style={{
                       marginTop: '4px',
                       fontSize: '10px',
-                      color: '#3b82f6',
+                      color: colors.primary,
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
@@ -165,7 +167,7 @@ export default function DatabasePanel({ isOpen, onClose }: DatabasePanelProps) {
                   onClick={() => setSelectedTable(selectedTable?.name === table.name ? null : table)}
                   style={{
                     padding: '6px 8px',
-                    background: selectedTable?.name === table.name ? '#eef2ff' : '#f9f9f9',
+                    background: selectedTable?.name === table.name ? `${colors.primary}15` : colors.surfaceAlt,
                     borderRadius: '4px',
                     marginBottom: '4px',
                     cursor: 'pointer',
@@ -175,12 +177,12 @@ export default function DatabasePanel({ isOpen, onClose }: DatabasePanelProps) {
                   }}
                 >
                   <span>{table.name}</span>
-                  <span style={{ color: '#666' }}>{table.columns.length} cols</span>
+                  <span style={{ color: colors.textSecondary }}>{table.columns.length} cols</span>
                 </div>
               ))}
 
               {schema.relations.length > 0 && (
-                <div style={{ marginTop: '8px', fontSize: '11px', color: '#666' }}>
+                <div style={{ marginTop: '8px', fontSize: '11px', color: colors.textSecondary }}>
                   <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Relations:</div>
                   {schema.relations.map((rel, relIdx) => (
                     <div key={relIdx} style={{ marginBottom: '2px' }}>

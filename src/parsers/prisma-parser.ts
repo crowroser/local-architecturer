@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
@@ -27,7 +26,8 @@ export class PrismaParser {
 
   private parseFile(filePath: string): DatabaseSchema | null {
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const relativePath = this.resolver.getRelativePath(filePath);
+      const content = this.resolver.readFileSync(relativePath);
       const tables = this.parseModels(content);
       const relations = this.parseRelations(content);
 

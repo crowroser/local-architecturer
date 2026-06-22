@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SecurityBoundary {
   sourceService: string;
@@ -27,6 +28,7 @@ interface SecurityPanelProps {
 }
 
 export default function SecurityPanel({ isOpen, onClose }: SecurityPanelProps) {
+  const { colors } = useTheme();
   const [result, setResult] = useState<SecurityBoundaryResult | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,9 +53,9 @@ export default function SecurityPanel({ isOpen, onClose }: SecurityPanelProps) {
   if (!isOpen) return null;
 
   const riskColors: Record<string, string> = {
-    safe: '#10b981',
-    warning: '#f59e0b',
-    dangerous: '#ef4444',
+    safe: colors.success,
+    warning: colors.warning,
+    dangerous: colors.danger,
   };
 
   const riskIcons: Record<string, string> = {
@@ -70,14 +72,14 @@ export default function SecurityPanel({ isOpen, onClose }: SecurityPanelProps) {
       width: '320px',
       maxHeight: 'calc(100vh - 20px)',
       overflowY: 'auto',
-      background: 'white',
+      background: colors.surface,
       borderRadius: '8px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+      boxShadow: `0 2px 8px ${colors.shadow}`,
       zIndex: 20,
     }}>
       <div style={{
         padding: '16px',
-        borderBottom: '1px solid #eee',
+        borderBottom: `1px solid ${colors.border}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -99,14 +101,14 @@ export default function SecurityPanel({ isOpen, onClose }: SecurityPanelProps) {
 
       <div style={{ padding: '16px' }}>
         {loading ? (
-          <div style={{ color: '#666', fontSize: '13px' }}>Analyzing security boundaries...</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Analyzing security boundaries...</div>
         ) : !result || result.boundaries.length === 0 ? (
-          <div style={{ color: '#999', fontSize: '13px' }}>No volume boundaries found</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>No volume boundaries found</div>
         ) : (
           <>
             <div style={{
               padding: '12px',
-              background: result.summary.dangerous > 0 ? '#fef2f2' : '#f0fdf4',
+              background: result.summary.dangerous > 0 ? `${colors.danger}15` : `${colors.success}15`,
               borderRadius: '8px',
               marginBottom: '16px',
             }}>
@@ -117,13 +119,13 @@ export default function SecurityPanel({ isOpen, onClose }: SecurityPanelProps) {
                 <strong>Total Volumes:</strong> {result.summary.totalVolumes}
               </div>
               <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                <span style={{ color: '#10b981' }}>Read-only: {result.summary.readOnly}</span>
+                <span style={{ color: colors.success }}>Read-only: {result.summary.readOnly}</span>
               </div>
               <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                <span style={{ color: '#f59e0b' }}>Read-write: {result.summary.readWrite}</span>
+                <span style={{ color: colors.warning }}>Read-write: {result.summary.readWrite}</span>
               </div>
               {result.summary.dangerous > 0 && (
-                <div style={{ fontSize: '12px', color: '#ef4444', fontWeight: 'bold' }}>
+                <div style={{ fontSize: '12px', color: colors.danger, fontWeight: 'bold' }}>
                   Dangerous: {result.summary.dangerous}
                 </div>
               )}
@@ -136,7 +138,7 @@ export default function SecurityPanel({ isOpen, onClose }: SecurityPanelProps) {
               {result.boundaries.map((boundary, idx) => (
                 <div key={idx} style={{
                   padding: '8px',
-                  background: '#f9f9f9',
+                  background: colors.surfaceAlt,
                   borderLeft: `3px solid ${riskColors[boundary.riskLevel]}`,
                   borderRadius: '4px',
                   marginBottom: '4px',
@@ -146,25 +148,25 @@ export default function SecurityPanel({ isOpen, onClose }: SecurityPanelProps) {
                     <span style={{ fontWeight: 'bold', fontSize: '12px' }}>
                       {boundary.sourceService}
                     </span>
-                    <span style={{ color: '#666' }}>→</span>
+                    <span style={{ color: colors.textSecondary }}>→</span>
                     <span style={{ fontWeight: 'bold', fontSize: '12px' }}>
                       {boundary.targetService}
                     </span>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#666' }}>
+                  <div style={{ fontSize: '11px', color: colors.textSecondary }}>
                     <div>{boundary.volumeSource} → {boundary.volumeTarget}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                       <span style={{
                         padding: '1px 4px',
                         borderRadius: '2px',
-                        background: boundary.permission === 'ro' ? '#dcfce7' : '#fef3c7',
+                        background: boundary.permission === 'ro' ? `${colors.success}20` : `${colors.warning}20`,
                         fontSize: '10px',
                         fontWeight: 'bold',
                       }}>
                         {boundary.permission.toUpperCase()}
                       </span>
                       {boundary.reason && (
-                        <span style={{ fontSize: '10px', color: '#999' }}>{boundary.reason}</span>
+                        <span style={{ fontSize: '10px', color: colors.textSecondary }}>{boundary.reason}</span>
                       )}
                     </div>
                   </div>

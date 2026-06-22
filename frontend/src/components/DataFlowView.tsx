@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface DataFlowStep {
   name: string;
@@ -20,6 +21,7 @@ interface DataFlowViewProps {
 }
 
 export default function DataFlowView({ isOpen, onClose }: DataFlowViewProps) {
+  const { colors } = useTheme();
   const [flows, setFlows] = useState<DataFlowConfig[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,12 +55,12 @@ export default function DataFlowView({ isOpen, onClose }: DataFlowViewProps) {
   };
 
   const stepTypeColors: Record<string, string> = {
-    input: '#10b981',
-    process: '#3b82f6',
+    input: colors.success,
+    process: colors.primary,
     transform: '#8b5cf6',
-    cache: '#f59e0b',
-    output: '#6366f1',
-    notify: '#ef4444',
+    cache: colors.warning,
+    output: colors.info,
+    notify: colors.danger,
   };
 
   return (
@@ -69,14 +71,14 @@ export default function DataFlowView({ isOpen, onClose }: DataFlowViewProps) {
       width: '320px',
       maxHeight: 'calc(100vh - 20px)',
       overflowY: 'auto',
-      background: 'white',
+      background: colors.surface,
       borderRadius: '8px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+      boxShadow: `0 2px 8px ${colors.shadow}`,
       zIndex: 20,
     }}>
       <div style={{
         padding: '16px',
-        borderBottom: '1px solid #eee',
+        borderBottom: `1px solid ${colors.border}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -98,9 +100,9 @@ export default function DataFlowView({ isOpen, onClose }: DataFlowViewProps) {
 
       <div style={{ padding: '16px' }}>
         {loading ? (
-          <div style={{ color: '#666', fontSize: '13px' }}>Loading data flows...</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Loading data flows...</div>
         ) : flows.length === 0 ? (
-          <div style={{ color: '#999', fontSize: '13px' }}>No data flows detected</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>No data flows detected</div>
         ) : (
           flows.map((flow, idx) => (
             <div key={idx} style={{ marginBottom: '16px' }}>
@@ -108,7 +110,7 @@ export default function DataFlowView({ isOpen, onClose }: DataFlowViewProps) {
                 {flow.name}
               </div>
               {flow.description && (
-                <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
+                <div style={{ fontSize: '11px', color: colors.textSecondary, marginBottom: '8px' }}>
                   {flow.description}
                 </div>
               )}
@@ -131,21 +133,21 @@ export default function DataFlowView({ isOpen, onClose }: DataFlowViewProps) {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '12px', fontWeight: 'bold' }}>{step.name}</div>
-                      <div style={{ fontSize: '10px', color: '#666' }}>
+                      <div style={{ fontSize: '10px', color: colors.textSecondary }}>
                         {step.type}
                         {step.service && ` • ${step.service}`}
                         {step.latencyMs && ` • ${step.latencyMs}ms`}
                       </div>
                     </div>
                     {stepIdx < flow.steps.length - 1 && (
-                      <div style={{ fontSize: '12px', color: '#ccc' }}>→</div>
+                      <div style={{ fontSize: '12px', color: colors.border }}>→</div>
                     )}
                   </div>
                 ))}
               </div>
 
               {flow.triggers.length > 0 && (
-                <div style={{ fontSize: '10px', color: '#999', marginTop: '8px' }}>
+                <div style={{ fontSize: '10px', color: colors.textSecondary, marginTop: '8px' }}>
                   Triggers: {flow.triggers.join(', ')}
                 </div>
               )}

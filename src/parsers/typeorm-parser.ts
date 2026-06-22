@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
 import type { DatabaseSchema, DBColumn, DBRelation } from '../types/database.js';
@@ -36,7 +35,7 @@ export class TypeORMParser {
 
   private parseFile(filePath: string): DatabaseSchema | null {
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = this.resolver.readFileSync(this.resolver.getRelativePath(filePath));
 
       const entityMatch = content.match(/@Entity\(['"]?(\w+)['"]?\)/);
       if (!entityMatch) return null;

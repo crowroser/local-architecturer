@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ProxyRoute {
   domain: string;
@@ -19,6 +20,7 @@ interface ProxyViewProps {
 }
 
 export default function ProxyView({ isOpen, onClose }: ProxyViewProps) {
+  const { colors } = useTheme();
   const [configs, setConfigs] = useState<ProxyConfig[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,14 +58,14 @@ export default function ProxyView({ isOpen, onClose }: ProxyViewProps) {
       width: '320px',
       maxHeight: 'calc(100vh - 20px)',
       overflowY: 'auto',
-      background: 'white',
+      background: colors.surface,
       borderRadius: '8px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+      boxShadow: `0 2px 8px ${colors.shadow}`,
       zIndex: 20,
     }}>
       <div style={{
         padding: '16px',
-        borderBottom: '1px solid #eee',
+        borderBottom: `1px solid ${colors.border}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -85,9 +87,9 @@ export default function ProxyView({ isOpen, onClose }: ProxyViewProps) {
 
       <div style={{ padding: '16px' }}>
         {loading ? (
-          <div style={{ color: '#666', fontSize: '13px' }}>Loading proxy configs...</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Loading proxy configs...</div>
         ) : configs.length === 0 ? (
-          <div style={{ color: '#999', fontSize: '13px' }}>No proxy configurations found</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>No proxy configurations found</div>
         ) : (
           configs.map((config, idx) => (
             <div key={idx} style={{ marginBottom: '16px' }}>
@@ -101,7 +103,7 @@ export default function ProxyView({ isOpen, onClose }: ProxyViewProps) {
               {config.routes.map((route, routeIdx) => (
                 <div key={routeIdx} style={{
                   padding: '8px',
-                  background: '#f9f9f9',
+                  background: colors.surfaceAlt,
                   borderRadius: '4px',
                   marginBottom: '4px',
                 }}>
@@ -109,13 +111,13 @@ export default function ProxyView({ isOpen, onClose }: ProxyViewProps) {
                     <span style={{ fontSize: '12px' }}>{route.tls ? '🔒' : '🔓'}</span>
                     <span style={{ fontWeight: 'bold', fontSize: '12px' }}>{route.domain}</span>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ fontSize: '11px', color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span>:{route.port}</span>
                     <span>→</span>
                     <span style={{ fontWeight: 'bold' }}>{route.targetService}</span>
                   </div>
                   {route.network && (
-                    <div style={{ fontSize: '10px', color: '#999', marginTop: '2px' }}>
+                    <div style={{ fontSize: '10px', color: colors.textSecondary, marginTop: '2px' }}>
                       network: {route.network}
                     </div>
                   )}

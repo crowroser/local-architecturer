@@ -28,23 +28,42 @@ import { DataFlowAnalyzer } from '../core/dataflow-analyzer.js';
 import { BuildEdgeGenerator } from '../core/build-edge-generator.js';
 import { RoutesEdgeGenerator } from '../core/routes-edge-generator.js';
 import { KubernetesParser } from '../parsers/kubernetes-parser.js';
+import { getVersion } from '../utils/version.js';
+import { getConfig } from '../config.js';
+import { Logger } from '../utils/logger.js';
 import type { DockerService } from '../types/index.js';
 
 export class ArchitectureMcpServer {
   private server: McpServer;
   private scanner: Scanner;
   private resolver: PathResolver;
+  private logger: Logger;
 
   constructor(projectPath: string) {
     this.resolver = new PathResolver(projectPath);
     this.scanner = new Scanner(this.resolver);
+    this.logger = new Logger('[MCP] ');
     
     this.server = new McpServer({
       name: 'local-architecturer',
-      version: '0.4.0',
+      version: getVersion(),
     });
 
     this.registerTools();
+  }
+
+  private getScanner(projectPath?: string): Scanner {
+    if (projectPath) {
+      return new Scanner(new PathResolver(projectPath));
+    }
+    return this.scanner;
+  }
+
+  private getResolver(projectPath?: string): PathResolver {
+    if (projectPath) {
+      return new PathResolver(projectPath);
+    }
+    return this.resolver;
   }
 
   private registerTools() {
@@ -55,7 +74,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path (defaults to current directory)'),
       },
       async ({ path }) => {
-        const scanner = path ? new Scanner(new PathResolver(path)) : this.scanner;
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
 
         const [dbSchemas, proxyConfigs, dataFlows] = await Promise.all([
@@ -101,8 +120,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         return {
           content: [
@@ -124,8 +142,7 @@ export class ArchitectureMcpServer {
           .describe('Output format: json, mermaid, or both (default: both)'),
       },
       async ({ path, format }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const graph = result.dependencies;
@@ -155,8 +172,7 @@ export class ArchitectureMcpServer {
           .describe('Include port conflict and volume analysis (default: true)'),
       },
       async ({ path, includeAnalysis }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const allServices: DockerService[] = [];
@@ -193,8 +209,7 @@ export class ArchitectureMcpServer {
           .describe('Filter by type: all, packages, or services'),
       },
       async ({ path, type }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         let graph = result.dependencies;
@@ -236,8 +251,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ nodeId, path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const node = result.dependencies.nodes.find(n => n.id === nodeId);
@@ -293,8 +307,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ serviceName, path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         for (const config of result.dockerConfigs) {
@@ -333,8 +346,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ packageName, path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const pkg = result.packages.find(p => p.name === packageName);
@@ -369,7 +381,7 @@ export class ArchitectureMcpServer {
         projectPath: z.string().optional().describe('Project root path'),
       },
       async ({ path, projectPath }) => {
-        const resolver = projectPath ? new PathResolver(projectPath) : this.resolver;
+        const resolver = this.getResolver(projectPath);
         const parser = new DockerfileParser(resolver);
         const result = parser.parse(path);
         
@@ -393,8 +405,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const packageCount = result.packages.length;
@@ -452,8 +463,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ query, path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const searchTerm = query.toLowerCase();
@@ -474,8 +484,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const cycles = CircularDetector.detect(result.dependencies);
@@ -504,8 +513,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const auditResult = DockerAuditor.audit(result.dockerConfigs);
@@ -533,8 +541,8 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const resolver = this.getResolver(path);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const envAnalyzer = new EnvAnalyzer(resolver);
@@ -553,8 +561,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const schemas = await scanner.getDBSchemas();
         
         return {
@@ -570,8 +577,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const configs = await scanner.getProxyConfigs();
         
         return {
@@ -587,8 +593,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const flows = await scanner.getDataFlows();
         
         return {
@@ -604,8 +609,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const analyzer = new SecurityBoundaryAnalyzer();
@@ -624,8 +628,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const allServices: DockerService[] = [];
@@ -651,8 +654,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         
         const hardwareNodes = result.dependencies.nodes.filter(n => n.type === 'hardware');
@@ -679,8 +681,7 @@ export class ArchitectureMcpServer {
         apiKey: z.string().optional().describe('API key for OpenRouter'),
       },
       async ({ path, provider, model, baseUrl, apiKey }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
 
         const config = {
@@ -707,7 +708,7 @@ export class ArchitectureMcpServer {
         commits: z.number().optional().describe('Number of recent commits to scan (default: 100)'),
       },
       async ({ path, commits }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const scanner = new GitHistoryScanner(resolver);
         const history = await scanner.scanHistory(commits || 100);
 
@@ -724,7 +725,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const parser = new CICDParser(resolver);
         const pipelines = await parser.parseAll();
 
@@ -778,7 +779,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const parser = new NginxParser(resolver);
         const configs = await parser.parseAll();
 
@@ -796,7 +797,7 @@ export class ArchitectureMcpServer {
         file: z.string().optional().describe('Specific file path to parse (e.g., requirements.txt)'),
       },
       async ({ path, file }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const parser = new PythonParser(resolver);
 
         if (file) {
@@ -827,7 +828,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const parser = new ComposerParser(resolver);
         const packages = parser.parseAll();
 
@@ -844,7 +845,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const parser = new WorkspaceParser(resolver);
         const config = parser.parse();
 
@@ -862,7 +863,7 @@ export class ArchitectureMcpServer {
         projectPath: z.string().optional().describe('Project root path'),
       },
       async ({ filePath, projectPath }) => {
-        const resolver = projectPath ? new PathResolver(projectPath) : this.resolver;
+        const resolver = this.getResolver(projectPath);
         const parser = new DockerComposeParser(resolver);
         const result = parser.parse(filePath);
 
@@ -888,8 +889,7 @@ export class ArchitectureMcpServer {
           .describe('Diagram variant: flowchart (flat) or subgraph (grouped by type, default)'),
       },
       async ({ path, variant }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
 
         const graph = result.dependencies;
@@ -911,7 +911,7 @@ export class ArchitectureMcpServer {
         projectPath: z.string().optional().describe('Project root path'),
       },
       async ({ filePath, projectPath }) => {
-        const resolver = projectPath ? new PathResolver(projectPath) : this.resolver;
+        const resolver = this.getResolver(projectPath);
         const parser = new EnvParser(resolver);
         const result = parser.parseEnvFile(filePath);
 
@@ -935,8 +935,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
 
         const allServices: DockerService[] = [];
@@ -966,7 +965,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const parser = new SequelizeParser(resolver);
         const schemas = parser.parseAll();
 
@@ -983,7 +982,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const parser = new SQLAlchemyParser(resolver);
         const schemas = parser.parseAll();
 
@@ -1000,7 +999,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const detector = new GatewayDetector(resolver);
         const gateways = await detector.detect();
 
@@ -1017,8 +1016,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const flows = await scanner.getDataFlows();
 
         const analyzer = new DataFlowAnalyzer();
@@ -1037,8 +1035,8 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const resolver = this.getResolver(path);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
 
         const cicdParser = new CICDParser(resolver);
@@ -1060,8 +1058,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
-        const scanner = new Scanner(resolver);
+        const scanner = this.getScanner(path);
         const result = await scanner.scan();
         const proxyConfigs = await scanner.getProxyConfigs();
 
@@ -1081,7 +1078,7 @@ export class ArchitectureMcpServer {
         path: z.string().optional().describe('Project root path'),
       },
       async ({ path }) => {
-        const resolver = path ? new PathResolver(path) : this.resolver;
+        const resolver = this.getResolver(path);
         const parser = new KubernetesParser(resolver);
         const analysis = await parser.parseAll();
 
@@ -1112,10 +1109,10 @@ export class ArchitectureMcpServer {
   async startStdio() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('MCP server started on stdio');
+    this.logger.info('MCP server started on stdio');
   }
 
-  async startHttp(port: number = 3001) {
+  async startHttp(port: number = getConfig().defaultMcpPort) {
     const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
     const express = await import('express');
     
@@ -1136,7 +1133,7 @@ export class ArchitectureMcpServer {
     });
     
     app.listen(port, () => {
-      console.error(`MCP server started on http://localhost:${port}/mcp`);
+      this.logger.info(`MCP server started on http://localhost:${port}/mcp`);
     });
   }
 }

@@ -76,11 +76,6 @@ export interface DependencyEdge {
   type: 'depends' | 'builds' | 'network' | 'connects' | 'volume' | 'routes';
 }
 
-export interface AnalyzeOptions {
-  path: string;
-  format: 'json' | 'text';
-}
-
 export interface GraphResponse {
   nodes: DependencyNode[];
   edges: DependencyEdge[];
@@ -104,9 +99,4 @@ export interface CircularDependencyResponse {
 export interface CycleInfo {
   path: string[];
   edgeCount: number;
-}
-
-export interface LayoutedNode extends DependencyNode {
-  x: number;
-  y: number;
 }

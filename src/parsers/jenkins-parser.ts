@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
 import type { Pipeline, PipelineJob, PipelineStep } from '../types/cicd.js';
@@ -14,9 +12,9 @@ export class JenkinsParser {
   }
 
   async parseAll(): Promise<Pipeline[]> {
-    const jenkinsfile = path.join(this.resolver.getRootDir(), 'Jenkinsfile');
+    const jenkinsfile = 'Jenkinsfile';
 
-    if (!fs.existsSync(jenkinsfile)) {
+    if (!this.resolver.fileExistsSync(jenkinsfile)) {
       return [];
     }
 
@@ -24,9 +22,9 @@ export class JenkinsParser {
     return pipeline ? [pipeline] : [];
   }
 
-  private parseFile(filePath: string): Pipeline | null {
+  private parseFile(relativePath: string): Pipeline | null {
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = this.resolver.readFileSync(relativePath);
       const triggers = this.extractTriggers(content);
       const jobs = this.extractStages(content);
 

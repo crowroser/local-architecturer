@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import yaml from 'js-yaml';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
@@ -15,19 +13,19 @@ export class CircleCIParser {
   }
 
   async parseAll(): Promise<Pipeline[]> {
-    const filePath = path.join(this.resolver.getRootDir(), '.circleci', 'config.yml');
+    const relativePath = '.circleci/config.yml';
 
-    if (!fs.existsSync(filePath)) {
+    if (!this.resolver.fileExistsSync(relativePath)) {
       return [];
     }
 
-    const pipeline = this.parseFile(filePath);
+    const pipeline = this.parseFile(relativePath);
     return pipeline ? [pipeline] : [];
   }
 
-  private parseFile(filePath: string): Pipeline | null {
+  private parseFile(relativePath: string): Pipeline | null {
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = this.resolver.readFileSync(relativePath);
       const config = yaml.load(content) as Record<string, unknown>;
 
       if (!config || typeof config !== 'object') return null;

@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
 import type { DependencyNode } from '../types/index.js';
@@ -22,14 +20,12 @@ export class PackageParser {
   }
 
   parse(relativePath: string): ParsedPackage | null {
-    const absolutePath = path.join(this.resolver.getRootDir(), relativePath);
-
-    if (!fs.existsSync(absolutePath)) {
+    if (!this.resolver.fileExistsSync(relativePath)) {
       this.logger.warn(`File not found: ${relativePath}`);
       return null;
     }
 
-    const content = fs.readFileSync(absolutePath, 'utf-8');
+    const content = this.resolver.readFileSync(relativePath);
     
     let pkg: Record<string, unknown>;
     try {

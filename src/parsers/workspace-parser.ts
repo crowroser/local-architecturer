@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import yaml from 'js-yaml';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
@@ -38,14 +36,12 @@ export class WorkspaceParser {
   }
 
   private parsePnpm(): WorkspaceConfig | null {
-    const workspacePath = path.join(this.resolver.getRootDir(), 'pnpm-workspace.yaml');
-
-    if (!fs.existsSync(workspacePath)) {
+    if (!this.resolver.fileExistsSync('pnpm-workspace.yaml')) {
       return null;
     }
 
     try {
-      const content = fs.readFileSync(workspacePath, 'utf-8');
+      const content = this.resolver.readFileSync('pnpm-workspace.yaml');
       const config = yaml.load(content) as { packages?: string[] };
 
       return {
@@ -59,14 +55,12 @@ export class WorkspaceParser {
   }
 
   private parseNpmOrYarn(): WorkspaceConfig | null {
-    const rootPkgPath = path.join(this.resolver.getRootDir(), 'package.json');
-
-    if (!fs.existsSync(rootPkgPath)) {
+    if (!this.resolver.fileExistsSync('package.json')) {
       return null;
     }
 
     try {
-      const content = fs.readFileSync(rootPkgPath, 'utf-8');
+      const content = this.resolver.readFileSync('package.json');
       const pkg = JSON.parse(content) as { workspaces?: string[] | { packages?: string[] } };
 
       if (!pkg.workspaces) {
@@ -96,13 +90,13 @@ export class WorkspaceParser {
   }
 
   private detectPackageManager(): PackageManager {
-    if (fs.existsSync(path.join(this.resolver.getRootDir(), 'pnpm-lock.yaml'))) {
+    if (this.resolver.fileExistsSync('pnpm-lock.yaml')) {
       return 'pnpm';
     }
-    if (fs.existsSync(path.join(this.resolver.getRootDir(), 'yarn.lock'))) {
+    if (this.resolver.fileExistsSync('yarn.lock')) {
       return 'yarn';
     }
-    if (fs.existsSync(path.join(this.resolver.getRootDir(), 'package-lock.json'))) {
+    if (this.resolver.fileExistsSync('package-lock.json')) {
       return 'npm';
     }
     return null;

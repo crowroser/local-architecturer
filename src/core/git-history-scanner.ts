@@ -1,7 +1,11 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
+import crypto from 'node:crypto';
+import path from 'node:path';
 import { PathResolver } from './path-resolver.js';
 import { Logger } from '../utils/logger.js';
+import { getConfig } from '../config.js';
 import { DockerComposeParser } from '../parsers/docker-compose-parser.js';
 import type { PackageInfo, DockerService } from '../types/index.js';
 
@@ -25,8 +29,13 @@ export class GitHistoryScanner {
     this.logger = new Logger('[GitHistoryScanner] ');
   }
 
+  private sanitizeHash(hash: string): string {
+    return hash.replace(/[^a-f0-9]/g, '');
+  }
+
   async scanHistory(maxCommits: number = 100): Promise<GitHistorySnapshot[]> {
-    const commits = this.getRecentCommits(maxCommits);
+    const config = getConfig();
+    const commits = this.getRecentCommits(maxCommits, config.gitTimeoutMs);
     const snapshots: GitHistorySnapshot[] = [];
 
     for (const commit of commits) {
@@ -39,7 +48,7 @@ export class GitHistoryScanner {
     return snapshots;
   }
 
-  private getRecentCommits(maxCommits: number): Array<{
+  private getRecentCommits(maxCommits: number, timeoutMs: number): Array<{
     hash: string;
     timestamp: string;
     message: string;
@@ -49,7 +58,7 @@ export class GitHistoryScanner {
       const format = '%H|%aI|%s|%an';
       const output = execSync(
         `git log --oneline -${maxCommits} --format="${format}"`,
-        { cwd: this.resolver.getRootDir(), encoding: 'utf-8', timeout: 10000 }
+        { cwd: this.resolver.getRootDir(), encoding: 'utf-8', timeout: timeoutMs }
       );
 
       return output.trim().split('\n').filter(Boolean).map(line => {
@@ -90,26 +99,21 @@ export class GitHistoryScanner {
 
   private getPackagesAtCommit(hash: string): PackageInfo[] {
     try {
-      const workspaceContent = execSync(
-        `git show ${hash}:pnpm-workspace.yaml 2>/dev/null || echo ""`,
-        { cwd: this.resolver.getRootDir(), encoding: 'utf-8', timeout: 5000 }
-      );
-
-      if (!workspaceContent.trim()) {
-        return this.getPackageJsonAtCommit(hash);
-      }
-
       return this.getPackageJsonAtCommit(hash);
-    } catch {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.debug(`Failed to get packages at ${hash.slice(0, 8)}: ${message}`);
       return [];
     }
   }
 
   private getPackageJsonAtCommit(hash: string): PackageInfo[] {
     try {
+      const config = getConfig();
+      const safeHash = this.sanitizeHash(hash);
       const rootPkg = execSync(
-        `git show ${hash}:package.json 2>/dev/null || echo "{}"`,
-        { cwd: this.resolver.getRootDir(), encoding: 'utf-8', timeout: 5000 }
+        `git show ${safeHash}:package.json 2>/dev/null || echo "{}"`,
+        { cwd: this.resolver.getRootDir(), encoding: 'utf-8', timeout: config.gitShortTimeoutMs }
       );
 
       const pkg = JSON.parse(rootPkg);
@@ -128,29 +132,36 @@ export class GitHistoryScanner {
       }
 
       return packages;
-    } catch {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.debug(`Failed to get package.json at ${hash.slice(0, 8)}: ${message}`);
       return [];
     }
   }
 
   private getServicesAtCommit(hash: string): DockerService[] {
     try {
+      const config = getConfig();
+      const safeHash = this.sanitizeHash(hash);
       const composeContent = execSync(
-        `git show ${hash}:docker-compose.yml 2>/dev/null || git show ${hash}:docker-compose.yaml 2>/dev/null || echo ""`,
-        { cwd: this.resolver.getRootDir(), encoding: 'utf-8', timeout: 5000 }
+        `git show ${safeHash}:docker-compose.yml 2>/dev/null || git show ${safeHash}:docker-compose.yaml 2>/dev/null || echo ""`,
+        { cwd: this.resolver.getRootDir(), encoding: 'utf-8', timeout: config.gitShortTimeoutMs }
       );
 
       if (!composeContent.trim()) return [];
 
       const parser = new DockerComposeParser(this.resolver);
-      const tempFile = `/tmp/compose-${hash}.yml`;
+      const tempDir = os.tmpdir();
+      const tempFile = path.join(tempDir, `archviz-compose-${crypto.randomUUID()}.yml`);
       fs.writeFileSync(tempFile, composeContent);
 
       const result = parser.parse(tempFile);
-      fs.unlinkSync(tempFile);
+      try { fs.unlinkSync(tempFile); } catch { /* ignore cleanup error */ }
 
       return result?.services || [];
-    } catch {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.debug(`Failed to get services at ${hash.slice(0, 8)}: ${message}`);
       return [];
     }
   }

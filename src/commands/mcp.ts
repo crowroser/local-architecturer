@@ -1,12 +1,13 @@
 import { Command } from 'commander';
 import { ArchitectureMcpServer } from '../mcp/server.js';
 import { Logger } from '../utils/logger.js';
+import { getConfig } from '../config.js';
 
 export const mcpCommand = new Command('mcp')
   .description('Start MCP server')
   .option('-p, --path <path>', 'Project root path', process.cwd())
   .option('-t, --transport <transport>', 'Transport type (stdio|http)', 'stdio')
-  .option('-port, --port <port>', 'HTTP port (only for http transport)', '3001')
+  .option('-port, --port <port>', 'HTTP port (only for http transport)', String(getConfig().defaultMcpPort))
   .action(async (options) => {
     const logger = new Logger();
     

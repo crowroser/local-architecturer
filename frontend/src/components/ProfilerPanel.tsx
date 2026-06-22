@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface AIWarning {
   serviceName: string;
@@ -35,6 +36,7 @@ interface ProfilerPanelProps {
 }
 
 export default function ProfilerPanel({ isOpen, onClose }: ProfilerPanelProps) {
+  const { colors } = useTheme();
   const [profile, setProfile] = useState<AIProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -59,9 +61,9 @@ export default function ProfilerPanel({ isOpen, onClose }: ProfilerPanelProps) {
   if (!isOpen) return null;
 
   const severityColors: Record<string, string> = {
-    critical: '#EF4444',
-    high: '#F59E0B',
-    medium: '#3B82F6',
+    critical: colors.danger,
+    high: colors.warning,
+    medium: colors.primary,
   };
 
   return (
@@ -72,14 +74,14 @@ export default function ProfilerPanel({ isOpen, onClose }: ProfilerPanelProps) {
       width: '320px',
       maxHeight: 'calc(100vh - 20px)',
       overflowY: 'auto',
-      background: 'white',
+      background: colors.surface,
       borderRadius: '8px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+      boxShadow: `0 2px 8px ${colors.shadow}`,
       zIndex: 20,
     }}>
       <div style={{
         padding: '16px',
-        borderBottom: '1px solid #eee',
+        borderBottom: `1px solid ${colors.border}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -101,14 +103,14 @@ export default function ProfilerPanel({ isOpen, onClose }: ProfilerPanelProps) {
 
       <div style={{ padding: '16px' }}>
         {loading ? (
-          <div style={{ color: '#666', fontSize: '13px' }}>Analyzing AI models...</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Analyzing AI models...</div>
         ) : !profile || profile.models.length === 0 ? (
-          <div style={{ color: '#999', fontSize: '13px' }}>No AI models detected in Docker services</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>No AI models detected in Docker services</div>
         ) : (
           <>
             <div style={{
               padding: '12px',
-              background: '#f0f9ff',
+              background: `${colors.primary}10`,
               borderRadius: '8px',
               marginBottom: '16px',
             }}>
@@ -128,7 +130,7 @@ export default function ProfilerPanel({ isOpen, onClose }: ProfilerPanelProps) {
 
             {profile.warnings.length > 0 && (
               <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '8px', color: '#EF4444' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '8px', color: colors.danger }}>
                   ⚠️ Warnings
                 </div>
                 {profile.warnings.map((warning, idx) => (
@@ -153,17 +155,17 @@ export default function ProfilerPanel({ isOpen, onClose }: ProfilerPanelProps) {
               {profile.models.map((model, idx) => (
                 <div key={idx} style={{
                   padding: '8px',
-                  background: '#f9f9f9',
+                  background: colors.surfaceAlt,
                   borderRadius: '4px',
                   marginBottom: '4px',
                 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '12px' }}>
                     {model.serviceName}
                   </div>
-                  <div style={{ fontSize: '11px', color: '#666' }}>
+                  <div style={{ fontSize: '11px', color: colors.textSecondary }}>
                     {model.model.name} ({model.model.parameters}B params)
                   </div>
-                  <div style={{ fontSize: '11px', color: '#666' }}>
+                  <div style={{ fontSize: '11px', color: colors.textSecondary }}>
                     Quantization: {model.quantization} | VRAM: {model.estimatedVram}GB
                   </div>
                 </div>

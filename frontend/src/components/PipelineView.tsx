@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface PipelineStep {
   name: string;
@@ -27,6 +28,7 @@ interface PipelineViewProps {
 }
 
 export default function PipelineView({ isOpen, onClose }: PipelineViewProps) {
+  const { colors } = useTheme();
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,14 +67,14 @@ export default function PipelineView({ isOpen, onClose }: PipelineViewProps) {
       width: '320px',
       maxHeight: 'calc(100vh - 20px)',
       overflowY: 'auto',
-      background: 'white',
+      background: colors.surface,
       borderRadius: '8px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+      boxShadow: `0 2px 8px ${colors.shadow}`,
       zIndex: 20,
     }}>
       <div style={{
         padding: '16px',
-        borderBottom: '1px solid #eee',
+        borderBottom: `1px solid ${colors.border}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -94,9 +96,9 @@ export default function PipelineView({ isOpen, onClose }: PipelineViewProps) {
 
       <div style={{ padding: '16px' }}>
         {loading ? (
-          <div style={{ color: '#666', fontSize: '13px' }}>Loading pipelines...</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Loading pipelines...</div>
         ) : pipelines.length === 0 ? (
-          <div style={{ color: '#999', fontSize: '13px' }}>No CI/CD pipelines found</div>
+          <div style={{ color: colors.textSecondary, fontSize: '13px' }}>No CI/CD pipelines found</div>
         ) : (
           pipelines.map((pipeline, idx) => (
             <div key={idx} style={{ marginBottom: '16px' }}>
@@ -104,11 +106,11 @@ export default function PipelineView({ isOpen, onClose }: PipelineViewProps) {
                 <span style={{ fontSize: '16px' }}>{platformIcons[pipeline.platform] || '🔄'}</span>
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{pipeline.name}</div>
-                  <div style={{ fontSize: '10px', color: '#666' }}>{pipeline.file}</div>
+                  <div style={{ fontSize: '10px', color: colors.textSecondary }}>{pipeline.file}</div>
                 </div>
               </div>
 
-              <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
+              <div style={{ fontSize: '11px', color: colors.textSecondary, marginBottom: '8px' }}>
                 Triggers: {pipeline.triggers.join(', ')}
               </div>
 
@@ -116,24 +118,24 @@ export default function PipelineView({ isOpen, onClose }: PipelineViewProps) {
                 <div key={jobIdx} style={{
                   marginLeft: '12px',
                   padding: '8px',
-                  background: '#f9f9f9',
+                  background: colors.surfaceAlt,
                   borderRadius: '4px',
                   marginBottom: '4px',
                 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>
                     {job.name}
                     {job.runsOn && (
-                      <span style={{ fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
+                      <span style={{ fontWeight: 'normal', color: colors.textSecondary, marginLeft: '8px' }}>
                         ({job.runsOn})
                       </span>
                     )}
                   </div>
                   {job.needs.length > 0 && (
-                    <div style={{ fontSize: '10px', color: '#888', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '10px', color: colors.textSecondary, marginBottom: '4px' }}>
                       needs: {job.needs.join(', ')}
                     </div>
                   )}
-                  <div style={{ fontSize: '10px', color: '#666' }}>
+                  <div style={{ fontSize: '10px', color: colors.textSecondary }}>
                     {job.steps.length} steps
                   </div>
                 </div>

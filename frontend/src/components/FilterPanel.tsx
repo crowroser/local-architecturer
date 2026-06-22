@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Node, Edge } from '@xyflow/react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface FilterPanelProps {
   nodes: Node[];
@@ -8,6 +9,7 @@ interface FilterPanelProps {
 }
 
 export default function FilterPanel({ nodes, edges, onFilterChange }: FilterPanelProps) {
+  const { colors } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [showPackages, setShowPackages] = useState(true);
   const [showServices, setShowServices] = useState(true);
@@ -58,11 +60,12 @@ export default function FilterPanel({ nodes, edges, onFilterChange }: FilterPane
       top: 10,
       left: 10,
       zIndex: 10,
-      background: 'white',
+      background: colors.surface,
       padding: '12px',
       borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      boxShadow: `0 2px 8px ${colors.shadow}`,
       minWidth: '200px',
+      border: `1px solid ${colors.border}`,
     }}>
       <input
         type="text"
@@ -74,52 +77,54 @@ export default function FilterPanel({ nodes, edges, onFilterChange }: FilterPane
           padding: '8px',
           marginBottom: '8px',
           borderRadius: '4px',
-          border: '1px solid #ddd',
+          border: `1px solid ${colors.border}`,
+          backgroundColor: colors.surfaceAlt,
+          color: colors.text,
         }}
       />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: colors.text }}>
           <input
             type="checkbox"
             checked={showPackages}
             onChange={(e) => handleTypeChange('packages', e.target.checked)}
           />
-          <span>📦 Packages</span>
+          <span>Packages</span>
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: colors.text }}>
           <input
             type="checkbox"
             checked={showServices}
             onChange={(e) => handleTypeChange('services', e.target.checked)}
           />
-          <span>🐳 Services</span>
+          <span>Services</span>
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: colors.text }}>
           <input
             type="checkbox"
             checked={showHardware}
             onChange={(e) => handleTypeChange('hardware', e.target.checked)}
           />
-          <span>🔌 Hardware</span>
+          <span>Hardware</span>
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: colors.text }}>
           <input
             type="checkbox"
             checked={showDatabase}
             onChange={(e) => handleTypeChange('database', e.target.checked)}
           />
-          <span>🗄️ Database</span>
+          <span>Database</span>
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: colors.text }}>
           <input
             type="checkbox"
             checked={showGateway}
             onChange={(e) => handleTypeChange('gateway', e.target.checked)}
           />
-          <span>🌐 Gateway</span>
+          <span>Gateway</span>
         </label>
       </div>
-      <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+      <div style={{ marginTop: '8px', fontSize: '12px', color: colors.textSecondary }}>
         Showing {filteredData.filteredNodes.length} of {nodes.length} nodes
       </div>
     </div>

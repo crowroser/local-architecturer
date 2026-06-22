@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { z } from 'zod';
 import { Scanner } from '../core/scanner.js';
 import { PathResolver } from '../core/path-resolver.js';
 import { PortConflictDetector } from '../mcp/port-conflict-detector.js';
@@ -14,14 +15,35 @@ import { CICDParser } from '../parsers/ci-cd-parser.js';
 import { SecurityBoundaryAnalyzer } from '../core/security-boundary-analyzer.js';
 import { KubernetesParser } from '../parsers/kubernetes-parser.js';
 import { Logger } from '../utils/logger.js';
+import { getConfig } from '../config.js';
 import type { DockerService, ProjectStructure } from '../types/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logger = new Logger('[Server] ');
 
+const HistoryQuerySchema = z.object({
+  commits: z.coerce.number().int().min(1).max(500).optional().default(100),
+});
+
+const CommitParamSchema = z.object({
+  commit: z.string().regex(/^[a-f0-9]+$/, 'Invalid commit hash format'),
+});
+
+const PortSchema = z.coerce.number().int().min(1).max(65535);
+
 interface CacheEntry<T> {
   data: T;
   expires: number;
+}
+
+interface ApiError {
+  error: string;
+  code: string;
+  details?: unknown;
+}
+
+function isApiError(err: unknown): err is ApiError {
+  return typeof err === 'object' && err !== null && 'error' in err && 'code' in err;
 }
 
 export interface ServerOptions {
@@ -35,13 +57,17 @@ export class ExpressServer {
   private resolver: PathResolver;
   private options: ServerOptions;
   private cache = new Map<string, CacheEntry<unknown>>();
-  private cacheTtlMs = 30_000;
+  private cacheTtlMs: number;
+  private cacheSecret: string;
 
   constructor(options: ServerOptions) {
     this.options = options;
     this.app = express();
     this.resolver = new PathResolver(options.projectPath);
     this.scanner = new Scanner(this.resolver);
+    const config = getConfig();
+    this.cacheTtlMs = config.cacheTtlMs;
+    this.cacheSecret = config.cacheSecret;
     
     this.setupMiddleware();
     this.setupRoutes();
@@ -73,7 +99,23 @@ export class ExpressServer {
   }
 
   private setupMiddleware() {
-    this.app.use(cors());
+    const allowedOrigins = [
+      'http://localhost:4000',
+      'http://localhost:3000',
+      'http://127.0.0.1:4000',
+      'http://127.0.0.1:3000',
+    ];
+    
+    this.app.use(cors({
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+    }));
     this.app.use(express.json());
   }
 
@@ -221,29 +263,38 @@ export class ExpressServer {
 
     this.app.get('/api/history', async (req, res) => {
       try {
+        const parsed = HistoryQuerySchema.safeParse(req.query);
+        if (!parsed.success) {
+          res.status(400).json({ error: 'Invalid query parameters', code: 'VALIDATION_ERROR', details: parsed.error.flatten() });
+          return;
+        }
         const scanner = new GitHistoryScanner(this.resolver);
-        const commits = parseInt(req.query.commits as string) || 100;
-        const history = await scanner.scanHistory(commits);
+        const history = await scanner.scanHistory(parsed.data.commits);
         res.json(history);
       } catch (error) {
         logger.error(`Failed to scan git history: ${error}`);
-        res.status(500).json({ error: 'Failed to scan git history' });
+        res.status(500).json({ error: 'Failed to scan git history', code: 'INTERNAL_ERROR' });
       }
     });
 
     this.app.get('/api/history/:commit', async (req, res) => {
       try {
+        const parsed = CommitParamSchema.safeParse(req.params);
+        if (!parsed.success) {
+          res.status(400).json({ error: 'Invalid commit hash', code: 'VALIDATION_ERROR', details: parsed.error.flatten() });
+          return;
+        }
         const scanner = new GitHistoryScanner(this.resolver);
         const history = await scanner.scanHistory(1);
-        const snapshot = history.find(s => s.commitHash === req.params.commit);
+        const snapshot = history.find(s => s.commitHash === parsed.data.commit);
         if (snapshot) {
           res.json(snapshot);
         } else {
-          res.status(404).json({ error: 'Commit not found' });
+          res.status(404).json({ error: 'Commit not found', code: 'NOT_FOUND' });
         }
       } catch (error) {
         logger.error(`Failed to get commit snapshot: ${error}`);
-        res.status(500).json({ error: 'Failed to get commit snapshot' });
+        res.status(500).json({ error: 'Failed to get commit snapshot', code: 'INTERNAL_ERROR' });
       }
     });
 
@@ -313,7 +364,12 @@ export class ExpressServer {
       }
     });
 
-    this.app.post('/api/cache/invalidate', (_req, res) => {
+    this.app.post('/api/cache/invalidate', (req, res) => {
+      const secret = req.headers['x-cache-secret'];
+      if (!secret || secret !== this.cacheSecret) {
+        res.status(403).json({ error: 'Invalid cache secret', code: 'FORBIDDEN' });
+        return;
+      }
       this.cache.clear();
       this.scanner.clearCache();
       res.json({ status: 'ok', message: 'Cache invalidated' });
@@ -322,6 +378,15 @@ export class ExpressServer {
     const publicPath = path.join(__dirname, '../../dist/public');
     this.app.get('*', (_req, res) => {
       res.sendFile(path.join(publicPath, 'index.html'));
+    });
+
+    this.app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+      if (isApiError(err)) {
+        res.status(400).json(err);
+        return;
+      }
+      logger.error(`Unhandled error: ${err}`);
+      res.status(500).json({ error: 'Internal server error', code: 'INTERNAL_ERROR' });
     });
   }
 

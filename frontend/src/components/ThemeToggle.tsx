@@ -1,7 +1,7 @@
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, colors, toggleTheme } = useTheme();
 
   return (
     <button
@@ -11,9 +11,9 @@ export default function ThemeToggle() {
         top: 10,
         right: 10,
         zIndex: 30,
-        background: theme === 'dark' ? '#333' : '#fff',
-        color: theme === 'dark' ? '#fff' : '#333',
-        border: `1px solid ${theme === 'dark' ? '#555' : '#ddd'}`,
+        background: theme === 'dark' ? colors.surfaceAlt : colors.surface,
+        color: colors.text,
+        border: `1px solid ${colors.border}`,
         borderRadius: '8px',
         padding: '8px 12px',
         cursor: 'pointer',

@@ -9,7 +9,7 @@ export interface AIModelInfo {
   };
 }
 
-export const AI_MODEL_DATABASE: AIModelInfo[] = [
+const AI_MODEL_DATABASE: AIModelInfo[] = [
   {
     name: 'llama-2-7b',
     family: 'llama',

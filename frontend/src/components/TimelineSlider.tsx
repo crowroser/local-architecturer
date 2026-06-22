@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface GitSnapshot {
   commitHash: string;
@@ -14,6 +15,7 @@ interface TimelineSliderProps {
 }
 
 export default function TimelineSlider({ onCommitSelect }: TimelineSliderProps) {
+  const { colors } = useTheme();
   const [history, setHistory] = useState<GitSnapshot[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -53,12 +55,12 @@ export default function TimelineSlider({ onCommitSelect }: TimelineSliderProps) 
         bottom: 20,
         left: '50%',
         transform: 'translateX(-50%)',
-        background: 'white',
+        background: colors.surface,
         padding: '12px 20px',
         borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: `0 2px 8px ${colors.shadow}`,
         fontSize: '12px',
-        color: '#666',
+        color: colors.textSecondary,
       }}>
         Loading history...
       </div>
@@ -77,10 +79,10 @@ export default function TimelineSlider({ onCommitSelect }: TimelineSliderProps) 
       bottom: 20,
       left: '50%',
       transform: 'translateX(-50%)',
-      background: 'white',
+      background: colors.surface,
       padding: '12px 20px',
       borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      boxShadow: `0 2px 8px ${colors.shadow}`,
       minWidth: '400px',
       zIndex: 10,
     }}>
@@ -88,7 +90,7 @@ export default function TimelineSlider({ onCommitSelect }: TimelineSliderProps) 
         <span style={{ fontSize: '12px', fontWeight: 'bold' }}>
           {current.commitHash} - {current.message}
         </span>
-        <span style={{ fontSize: '10px', color: '#666' }}>
+        <span style={{ fontSize: '10px', color: colors.textSecondary }}>
           {current.author} | {new Date(current.timestamp).toLocaleDateString()}
         </span>
       </div>
@@ -102,7 +104,7 @@ export default function TimelineSlider({ onCommitSelect }: TimelineSliderProps) 
         style={{ width: '100%', marginBottom: '8px' }}
       />
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#666' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: colors.textSecondary }}>
         <span>📦 {current.packageCount} packages</span>
         <span>🐳 {current.serviceCount} services</span>
         <span>{currentIndex + 1} / {history.length}</span>

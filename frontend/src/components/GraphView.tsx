@@ -22,7 +22,7 @@ import DatabasePanel from './DatabasePanel';
 import ProxyView from './ProxyView';
 import DataFlowView from './DataFlowView';
 import SecurityPanel from './SecurityPanel';
-import type { GraphResponse, CircularDependencyResponse, DependencyNode, DependencyEdge, PackageInfo } from '../../src/types/index';
+import type { GraphResponse, CircularDependencyResponse, DependencyNode, DependencyEdge, PackageInfo } from '../types';
 
 const nodeTypes = {
   package: CustomNode,

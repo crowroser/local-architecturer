@@ -13,6 +13,7 @@ import { SequelizeParser } from '../parsers/sequelize-parser.js';
 import { SQLAlchemyParser } from '../parsers/sqlalchemy-parser.js';
 import { GatewayDetector } from './gateway-detector.js';
 import { KubernetesParser } from '../parsers/kubernetes-parser.js';
+import { Logger } from '../utils/logger.js';
 import type { ProjectStructure, DependencyGraph, DependencyNode, DependencyEdge, PackageInfo } from '../types/index.js';
 
 interface CacheEntry<T> {
@@ -26,6 +27,7 @@ export interface ScannerOptions {
 
 export class Scanner {
   private resolver: PathResolver;
+  private logger: Logger;
   private dockerScanner: DockerScanner;
   private workspaceParser: WorkspaceParser;
   private packageParser: PackageParser;
@@ -44,6 +46,7 @@ export class Scanner {
 
   constructor(resolver: PathResolver, options?: ScannerOptions) {
     this.resolver = resolver;
+    this.logger = new Logger('[Scanner] ');
     this.dockerScanner = new DockerScanner(resolver);
     this.workspaceParser = new WorkspaceParser(resolver);
     this.packageParser = new PackageParser(resolver);
@@ -147,7 +150,9 @@ export class Scanner {
     try {
       const pkg = this.packageParser.parse('package.json');
       return pkg?.name || 'unknown';
-    } catch {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.debug(`Failed to get project name: ${message}`);
       return 'unknown';
     }
   }

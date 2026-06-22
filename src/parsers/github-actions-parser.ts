@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import yaml from 'js-yaml';
 import { PathResolver } from '../core/path-resolver.js';
 import { Logger } from '../utils/logger.js';
@@ -15,20 +13,20 @@ export class GitHubActionsParser {
   }
 
   async parseAll(): Promise<Pipeline[]> {
-    const workflowsDir = path.join(this.resolver.getRootDir(), '.github', 'workflows');
+    const ymlFiles = this.resolver.findFilesSync('.github/workflows/*.yml');
+    const yamlFiles = this.resolver.findFilesSync('.github/workflows/*.yaml');
+    const files = [...ymlFiles, ...yamlFiles];
 
-    if (!fs.existsSync(workflowsDir)) {
+    if (files.length === 0) {
       return [];
     }
-
-    const files = fs.readdirSync(workflowsDir).filter(f =>
-      f.endsWith('.yml') || f.endsWith('.yaml')
-    );
 
     const pipelines: Pipeline[] = [];
 
     for (const file of files) {
-      const pipeline = this.parseFile(path.join(workflowsDir, file), file);
+      const relativePath = this.resolver.getRelativePath(file);
+      const fileName = relativePath.split('/').pop() || relativePath.split('\\').pop() || '';
+      const pipeline = this.parseFile(relativePath, fileName);
       if (pipeline) {
         pipelines.push(pipeline);
       }
@@ -37,9 +35,9 @@ export class GitHubActionsParser {
     return pipelines;
   }
 
-  private parseFile(filePath: string, fileName: string): Pipeline | null {
+  private parseFile(relativePath: string, fileName: string): Pipeline | null {
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = this.resolver.readFileSync(relativePath);
       const config = yaml.load(content) as Record<string, unknown>;
 
       if (!config || typeof config !== 'object') return null;

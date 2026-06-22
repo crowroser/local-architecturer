@@ -1,12 +1,14 @@
 import { Command } from 'commander';
 import { PathResolver } from '../core/path-resolver.js';
 import { Scanner } from '../core/scanner.js';
+import { CircularDetector } from '../core/circular-detector.js';
 import { Logger } from '../utils/logger.js';
 
 export const analyzeCommand = new Command('analyze')
   .description('Analyze project structure')
   .option('-p, --path <path>', 'Project root path', process.cwd())
   .option('-f, --format <format>', 'Output format (json|text)', 'json')
+  .option('--check-circular', 'Check for circular dependencies and exit with error if found')
   .action(async (options) => {
     const logger = new Logger();
     
@@ -16,6 +18,23 @@ export const analyzeCommand = new Command('analyze')
       const resolver = new PathResolver(options.path);
       const scanner = new Scanner(resolver);
       const result = await scanner.scan();
+
+      if (options.checkCircular) {
+        const cycles = CircularDetector.detect(result.dependencies);
+        const affected = CircularDetector.getAffectedPackages(result.dependencies);
+        
+        if (cycles.length > 0) {
+          logger.error(`Found ${cycles.length} circular dependencies:`);
+          for (const cycle of cycles) {
+            logger.error(`  ${cycle.cycle.join(' → ')}`);
+          }
+          logger.error(`Affected packages: ${affected.join(', ')}`);
+          process.exit(1);
+        } else {
+          logger.success('No circular dependencies found');
+          process.exit(0);
+        }
+      }
 
       if (options.format === 'json') {
         console.log(JSON.stringify(result, null, 2));

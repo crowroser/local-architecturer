@@ -24,7 +24,7 @@ describe('MermaidBuilder', () => {
   it('should build subgraph by type', () => {
     const graph: DependencyGraph = {
       nodes: [
-        { id: '@app/core', type: 'package', name: '@app/core' },
+        { id: '@app/core', type: 'package', name: '@app/core', metadata: { language: 'javascript' } },
         { id: 'web', type: 'service', name: 'web' },
         { id: 'api', type: 'service', name: 'api' },
       ],
@@ -35,8 +35,8 @@ describe('MermaidBuilder', () => {
     };
 
     const mermaid = MermaidBuilder.buildSubgraphByType(graph);
-    expect(mermaid).toContain('subgraph packages');
-    expect(mermaid).toContain('subgraph services');
+    expect(mermaid).toContain('subgraph javascript_packages');
+    expect(mermaid).toContain('subgraph docker_services');
     expect(mermaid).toContain('_app_core');
     expect(mermaid).toContain('web');
     expect(mermaid).toContain('api');

@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/tests-132-passing-brightgreen.svg)](#test)
+[![Tests](https://img.shields.io/badge/tests-132%20passing-brightgreen)](#test)
 
 Geliştiricilerin terminal üzerinden kendi projelerinin kök dizininde çalıştırabileceği; pnpm monorepo yapılarını, Docker konfigürasyonlarını ve Kubernetes manifestlerini otomatik analiz eden bir Node.js CLI aracı ve MCP (Model Context Protocol) sunucusu.
 

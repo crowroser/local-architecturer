@@ -2,7 +2,6 @@
 
 [![npm version](https://img.shields.io/npm/v/local-architecturer)](https://www.npmjs.com/package/local-architecturer)
 [![npm downloads](https://img.shields.io/npm/dm/local-architecturer)](https://www.npmjs.com/package/local-architecturer)
-[![npm bundle size](https://img.shields.io/bundlephobia/minzip/local-architecturer)](https://bundlephobia.com/package/local-architecturer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)

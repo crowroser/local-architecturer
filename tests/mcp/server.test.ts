@@ -2,6 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ArchitectureMcpServer } from '../../src/mcp/server.js';
 import { Scanner } from '../../src/core/scanner.js';
 import { PathResolver } from '../../src/core/path-resolver.js';
+import { PortConflictDetector } from '../../src/mcp/port-conflict-detector.js';
+import { MermaidBuilder } from '../../src/mcp/mermaid-builder.js';
+import type { DockerService, DependencyGraph } from '../../src/types/index.js';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs/promises';
@@ -123,5 +126,130 @@ describe('ArchitectureMcpServer', () => {
     const scanner = new Scanner(resolver);
     const schemas = await scanner.getDBSchemas();
     expect(Array.isArray(schemas)).toBe(true);
+  });
+
+  it('should filter dependency graph by package type', async () => {
+    const resolver = new PathResolver(tempDir);
+    const scanner = new Scanner(resolver);
+    const result = await scanner.scan();
+    const pkgNodes = result.dependencies.nodes.filter(n => n.type === 'package');
+    expect(pkgNodes.length).toBeGreaterThan(0);
+    for (const node of pkgNodes) {
+      expect(node.type).toBe('package');
+    }
+  });
+
+  it('should find node details by ID', async () => {
+    const resolver = new PathResolver(tempDir);
+    const scanner = new Scanner(resolver);
+    const result = await scanner.scan();
+    const node = result.dependencies.nodes.find(n => n.id === '@app/core');
+    expect(node).toBeDefined();
+    expect(node!.type).toBe('package');
+  });
+
+  it('should return "not found" for unknown node ID', async () => {
+    const resolver = new PathResolver(tempDir);
+    const scanner = new Scanner(resolver);
+    const result = await scanner.scan();
+    const node = result.dependencies.nodes.find(n => n.id === 'nonexistent');
+    expect(node).toBeUndefined();
+  });
+});
+
+describe('PortConflictDetector', () => {
+  it('detects port conflicts', () => {
+    const services: DockerService[] = [
+      { name: 'web', image: 'nginx', ports: ['80:80'], volumes: [], networks: [], environment: {} },
+      { name: 'api', image: 'node', ports: ['80:3000'], volumes: [], networks: [], environment: {} },
+    ];
+    const result = PortConflictDetector.analyze(services, []);
+    expect(result.portConflicts).toHaveLength(1);
+    expect(result.portConflicts[0].port).toBe('80');
+    expect(result.portConflicts[0].services).toContain('web');
+    expect(result.portConflicts[0].services).toContain('api');
+  });
+
+  it('returns no conflicts when ports are unique', () => {
+    const services: DockerService[] = [
+      { name: 'web', image: 'nginx', ports: ['80:80'], volumes: [], networks: [], environment: {} },
+      { name: 'api', image: 'node', ports: ['3000:3000'], volumes: [], networks: [], environment: {} },
+    ];
+    const result = PortConflictDetector.analyze(services, []);
+    expect(result.portConflicts).toHaveLength(0);
+  });
+
+  it('analyzes volumes', () => {
+    const services: DockerService[] = [
+      {
+        name: 'db', image: 'postgres', ports: ['5432:5432'],
+        volumes: [{ source: './data', target: '/var/lib/postgresql/data', readOnly: false }],
+        networks: [], environment: {},
+      },
+    ];
+    const result = PortConflictDetector.analyze(services, ['default']);
+    expect(result.volumes).toHaveLength(1);
+    expect(result.volumes[0].isLocalPath).toBe(true);
+    expect(result.volumes[0].readOnly).toBe(false);
+    expect(result.summary.totalNetworks).toBe(1);
+  });
+
+  it('computes correct summary', () => {
+    const services: DockerService[] = [
+      { name: 'a', image: 'x', ports: ['1:1', '2:2'], volumes: [], networks: [], environment: {} },
+      { name: 'b', image: 'y', ports: ['3:3'], volumes: [], networks: [], environment: {} },
+    ];
+    const result = PortConflictDetector.analyze(services, []);
+    expect(result.summary.totalServices).toBe(2);
+    expect(result.summary.totalPorts).toBe(3);
+    expect(result.summary.totalVolumes).toBe(0);
+  });
+});
+
+describe('MermaidBuilder', () => {
+  const graph: DependencyGraph = {
+    nodes: [
+      { id: 'pkg-a', name: 'Package A', type: 'package', metadata: { language: 'javascript' } },
+      { id: 'pkg-b', name: 'Package B', type: 'package', metadata: { language: 'python' } },
+      { id: 'svc-web', name: 'web', type: 'service' },
+    ],
+    edges: [
+      { source: 'pkg-a', target: 'pkg-b', type: 'depends' },
+      { source: 'pkg-a', target: 'svc-web', type: 'network' },
+    ],
+  };
+
+  it('builds flowchart', () => {
+    const mermaid = MermaidBuilder.buildFlowchart(graph);
+    expect(mermaid).toContain('graph TD');
+    expect(mermaid).toContain('pkg_a');
+    expect(mermaid).toContain('svc_web');
+    expect(mermaid).toContain('-->');
+    expect(mermaid).toContain('-.-');
+  });
+
+  it('builds subgraph by type', () => {
+    const mermaid = MermaidBuilder.buildSubgraphByType(graph);
+    expect(mermaid).toContain('subgraph javascript_packages');
+    expect(mermaid).toContain('subgraph python_packages');
+    expect(mermaid).toContain('subgraph docker_services');
+    expect(mermaid).toContain('pkg_a');
+    expect(mermaid).toContain('svc_web');
+  });
+
+  it('sanitizes node IDs', () => {
+    const specialGraph: DependencyGraph = {
+      nodes: [{ id: '@scope/name', name: 'Scope Name', type: 'package', metadata: {} }],
+      edges: [],
+    };
+    const mermaid = MermaidBuilder.buildFlowchart(specialGraph);
+    expect(mermaid).toContain('_scope_name');
+    expect(mermaid).not.toContain('@scope');
+  });
+
+  it('handles empty graph', () => {
+    const empty: DependencyGraph = { nodes: [], edges: [] };
+    const mermaid = MermaidBuilder.buildFlowchart(empty);
+    expect(mermaid).toContain('graph TD');
   });
 });

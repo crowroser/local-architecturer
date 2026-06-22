@@ -31,6 +31,7 @@ import { KubernetesParser } from '../parsers/kubernetes-parser.js';
 import { getVersion } from '../utils/version.js';
 import { getConfig } from '../config.js';
 import { Logger } from '../utils/logger.js';
+import crypto from 'node:crypto';
 import type { DockerService } from '../types/index.js';
 
 export class ArchitectureMcpServer {
@@ -675,27 +676,31 @@ export class ArchitectureMcpServer {
       {
         path: z.string().optional().describe('Project root path'),
         provider: z.enum(['ollama', 'openrouter', 'lmstudio']).optional()
-          .describe('LLM provider (default: ollama)'),
-        model: z.string().optional().describe('Model name (default: qwen2.5)'),
+          .describe('LLM provider (default: from ARCHVIZ_PROVIDER or ollama)'),
+        model: z.string().optional().describe('Model name (default: from ARCHVIZ_MODEL or qwen2.5)'),
         baseUrl: z.string().optional().describe('Custom API base URL'),
-        apiKey: z.string().optional().describe('API key for OpenRouter'),
+        apiKey: z.string().optional().describe('API key for OpenRouter (prefer ARCHVIZ_OPENROUTER_API_KEY)'),
       },
       async ({ path, provider, model, baseUrl, apiKey }) => {
         const scanner = this.getScanner(path);
         const result = await scanner.scan();
 
-        const config = {
-          provider: provider || 'ollama',
-          model: model || 'qwen2.5',
-          baseUrl,
-          apiKey,
+        const cfg = getConfig();
+        const reviewConfig = {
+          provider: provider ?? cfg.aiProvider,
+          model: model ?? cfg.aiModel,
+          baseUrl: baseUrl ?? cfg.aiBaseUrl,
+          // Prefer env-var key; fall back to the explicit arg only if provided.
+          apiKey: cfg.aiApiKey ?? apiKey,
+          timeoutMs: cfg.aiTimeoutMs,
         };
 
-        const engine = new ReviewEngine(config);
+        const engine = new ReviewEngine(reviewConfig);
         const review = await engine.review(result as unknown as Record<string, unknown>);
 
         return {
           content: [{ type: 'text', text: JSON.stringify(review, null, 2) }],
+          isError: !review.success,
         };
       }
     );
@@ -1114,26 +1119,89 @@ export class ArchitectureMcpServer {
 
   async startHttp(port: number = getConfig().defaultMcpPort) {
     const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
+    type Transport = InstanceType<typeof StreamableHTTPServerTransport>;
     const express = await import('express');
-    
+    const config = getConfig();
+    const host = config.host;
+
     const app = express.default();
     app.use(express.default.json());
-    
+
+    // One transport per session; keyed by session id so reconnects reuse state.
+    const transports = new Map<string, Transport>();
+
     app.post('/mcp', async (req, res) => {
-      const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: undefined,
+      try {
+        const sessionId = Array.isArray(req.headers['mcp-session-id'])
+          ? req.headers['mcp-session-id'][0]
+          : req.headers['mcp-session-id'];
+        let transport: Transport;
+
+        if (sessionId && transports.has(sessionId)) {
+          transport = transports.get(sessionId)!;
+        } else {
+          transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => crypto.randomUUID(),
+            onsessioninitialized: (id: string) => {
+              transports.set(id, transport);
+            },
+          });
+          transport.onclose = () => {
+            const id = [...transports.entries()].find(([, t]) => t === transport)?.[0];
+            if (id) transports.delete(id);
+          };
+          await this.server.connect(transport);
+        }
+        await transport.handleRequest(req, res, req.body);
+      } catch (error) {
+        this.logger.error(`MCP request failed: ${error}`);
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: '2.0',
+            error: { code: -32603, message: 'Internal error' },
+            id: null,
+          });
+        }
+      }
+    });
+
+    app.get('/mcp', (_req, res) => {
+      res.json({ status: 'ok', server: 'local-architecturer', version: getVersion() });
+    });
+
+    app.delete('/mcp', async (req, res) => {
+      try {
+        const sessionId = Array.isArray(req.headers['mcp-session-id'])
+          ? req.headers['mcp-session-id'][0]
+          : req.headers['mcp-session-id'];
+        if (sessionId && transports.has(sessionId)) {
+          const transport = transports.get(sessionId)!;
+          await transport.handleRequest(req, res, req.body);
+          transports.delete(sessionId);
+        } else {
+          res.status(404).json({ error: 'Session not found' });
+        }
+      } catch (error) {
+        this.logger.error(`MCP delete failed: ${error}`);
+        if (!res.headersSent) res.status(500).json({ error: 'Internal error' });
+      }
+    });
+
+    return new Promise<void>((resolve, reject) => {
+      const httpServer = app.listen(port, host, () => {
+        this.logger.info(`MCP server started on http://${host}:${port}/mcp`);
+        if (host === '0.0.0.0') {
+          this.logger.warn(
+            'MCP HTTP server bound to 0.0.0.0 — it is reachable from the network. ' +
+              'Bind to 127.0.0.1 (default) unless you intend to expose it.'
+          );
+        }
+        resolve();
       });
-      
-      await this.server.connect(transport);
-      await transport.handleRequest(req, res, req.body);
-    });
-    
-    app.get('/mcp', async (req, res) => {
-      res.json({ status: 'ok', server: 'local-architecturer' });
-    });
-    
-    app.listen(port, () => {
-      this.logger.info(`MCP server started on http://localhost:${port}/mcp`);
+      httpServer.on('error', (err: NodeJS.ErrnoException) => {
+        this.logger.error(`MCP HTTP server failed to start: ${err.message}`);
+        reject(err);
+      });
     });
   }
 }

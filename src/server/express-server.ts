@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { Scanner } from '../core/scanner.js';
@@ -46,6 +47,22 @@ function isApiError(err: unknown): err is ApiError {
   return typeof err === 'object' && err !== null && 'error' in err && 'code' in err;
 }
 
+/**
+ * Constant-time string comparison to mitigate timing attacks on secrets.
+ * Returns true only when both strings are byte-equal. Length check is folded
+ * into the comparison so timing leaks only the length, not the prefix.
+ */
+function timingSafeEqualString(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, 'utf-8');
+  const bBuf = Buffer.from(b, 'utf-8');
+  if (aBuf.length !== bBuf.length) {
+    // Still do a comparison to keep timing uniform, then return false.
+    crypto.timingSafeEqual(aBuf, aBuf);
+    return false;
+  }
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
 export interface ServerOptions {
   port: number;
   projectPath: string;
@@ -58,7 +75,7 @@ export class ExpressServer {
   private options: ServerOptions;
   private cache = new Map<string, CacheEntry<unknown>>();
   private cacheTtlMs: number;
-  private cacheSecret: string;
+  private cacheSecret: string | null;
 
   constructor(options: ServerOptions) {
     this.options = options;
@@ -365,8 +382,17 @@ export class ExpressServer {
     });
 
     this.app.post('/api/cache/invalidate', (req, res) => {
-      const secret = req.headers['x-cache-secret'];
-      if (!secret || secret !== this.cacheSecret) {
+      if (this.cacheSecret === null) {
+        res.status(404).json({ error: 'Cache invalidation disabled (no secret configured)', code: 'NOT_FOUND' });
+        return;
+      }
+      const provided = req.headers['x-cache-secret'];
+      const providedStr = Array.isArray(provided) ? provided[0] : provided;
+      if (typeof providedStr !== 'string' || providedStr.length === 0) {
+        res.status(403).json({ error: 'Invalid cache secret', code: 'FORBIDDEN' });
+        return;
+      }
+      if (!timingSafeEqualString(providedStr, this.cacheSecret)) {
         res.status(403).json({ error: 'Invalid cache secret', code: 'FORBIDDEN' });
         return;
       }
@@ -391,9 +417,11 @@ export class ExpressServer {
   }
 
   async start() {
-    return new Promise<void>((resolve) => {
-      this.app.listen(this.options.port, () => {
-        logger.success(`Architecture Visualizer running at http://localhost:${this.options.port}`);
+    const config = getConfig();
+    const host = config.host;
+    return new Promise<void>((resolve, reject) => {
+      const httpServer = this.app.listen(this.options.port, host, () => {
+        logger.success(`Architecture Visualizer running at http://${host}:${this.options.port}`);
         logger.info('API Endpoints:');
         logger.info('  GET /api/health              - Health check');
         logger.info('  GET /api/graph               - Dependency graph');
@@ -401,7 +429,17 @@ export class ExpressServer {
         logger.info('  GET /api/docker              - Docker services');
         logger.info('  GET /api/analyze             - Full analysis');
         logger.info('  POST /api/cache/invalidate   - Clear scan cache');
+        if (host === '0.0.0.0') {
+          logger.warn(
+            'Server bound to 0.0.0.0 — reachable from the network. ' +
+              'Bind to 127.0.0.1 (default) unless you intend to expose it.'
+          );
+        }
         resolve();
+      });
+      httpServer.on('error', (err: NodeJS.ErrnoException) => {
+        logger.error(`Server failed to start: ${err.message}`);
+        reject(err);
       });
     });
   }

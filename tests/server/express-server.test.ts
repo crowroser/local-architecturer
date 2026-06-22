@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ExpressServer } from '../../src/server/express-server.js';
+import { resetConfig } from '../../src/config.js';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs/promises';
+
+const TEST_CACHE_SECRET = 'test-cache-secret-do-not-use-in-prod';
 
 describe('ExpressServer', () => {
   let tempDir: string;
@@ -12,12 +15,17 @@ describe('ExpressServer', () => {
   beforeAll(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'express-test-'));
     await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify({ name: 'test-project', version: '1.0.0' }));
+    // Provide a cache secret for this process so the invalidate endpoint is enabled.
+    process.env.ARCHVIZ_CACHE_SECRET = TEST_CACHE_SECRET;
+    resetConfig();
     port = 10000 + Math.floor(Math.random() * 50000);
     server = new ExpressServer({ port, projectPath: tempDir });
     await server.start();
   });
 
   afterAll(async () => {
+    delete process.env.ARCHVIZ_CACHE_SECRET;
+    resetConfig();
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
@@ -142,7 +150,7 @@ describe('ExpressServer', () => {
   it('should accept cache invalidation with secret', async () => {
     const res = await fetch(`http://localhost:${port}/api/cache/invalidate`, {
       method: 'POST',
-      headers: { 'x-cache-secret': 'archviz-cache-invalidate' },
+      headers: { 'x-cache-secret': TEST_CACHE_SECRET },
     });
     expect(res.ok).toBe(true);
     const data = await res.json();
